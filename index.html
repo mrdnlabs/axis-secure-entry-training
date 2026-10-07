@@ -367,7 +367,8 @@ p { margin: 0; }
 .narr .play { cursor: pointer; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
 .narr .play svg { width: 14px; height: 14px; fill: currentColor; }
 .narr .lbl { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
-.narr .track { flex: 1; min-width: 60px; height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; cursor: pointer; }
+.narr .opt .sm { display: none; }
+.narr .track { flex: 1; min-width: 40px; height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; cursor: pointer; }
 .narr .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--accent); width: 0; }
 .narr .time { font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .narr .opt { cursor: pointer; border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 4px 9px; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
@@ -379,6 +380,7 @@ p { margin: 0; }
 .captions p { font-size: .95rem; line-height: 1.55; max-width: 80ch; }
 .start { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 @media (max-width: 860px) { .narr .lbl { display: none; } .narr { padding: 8px 16px; gap: 8px; } }
+@media (max-width: 520px) { .narr .opt .lg { display: none; } .narr .opt .sm { display: inline; } .narr .opt { padding: 4px 7px; } .narr .time { font-size: .7rem; } }
 .notes-panel { position: fixed; right: 16px; bottom: 132px; z-index: 15; width: min(440px, calc(100% - 32px)); max-height: 46vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 20px 50px -20px color-mix(in srgb, var(--ink) 50%, transparent); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
 .notes-panel .k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); display: flex; justify-content: space-between; }
 .notes-panel p { font-size: .92rem; line-height: 1.5; }
@@ -968,8 +970,8 @@ p { margin: 0; }
     <span class="lbl" id="narrLbl">Narration</span>
     <div class="track" id="narrTrack" role="slider" aria-label="Narration position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="narrFill"></i></div>
     <span class="time" id="narrTime">0:00</span>
-    <button class="opt" id="ccBtn" aria-pressed="false" title="Show the narration transcript">Transcript</button>
-    <button class="opt" id="autoBtn" aria-pressed="false" title="Go to the next slide when narration ends">Auto-advance</button>
+    <button class="opt" id="ccBtn" aria-pressed="false" title="Show the narration transcript"><span class="lg">Transcript</span><span class="sm">Text</span></button>
+    <button class="opt" id="autoBtn" aria-pressed="false" title="Go to the next slide when narration ends"><span class="lg">Auto-advance</span><span class="sm">Auto</span></button>
   </div>
   <nav class="rail" aria-label="Slide navigation">
     <button class="navbtn" id="prev" aria-label="Previous slide">←</button>
