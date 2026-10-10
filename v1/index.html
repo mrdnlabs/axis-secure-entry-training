@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>From Card to Door</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a slim instrument header, one slide stage that scrolls on small screens, and a progress rail of per-slide ticks grouped by section */
+:root {
+  --bg: #EDF0EE; --surface: #F8FAF9; --surface-2: #E2E8E5; --ink: #13212A; --ink-2: #4A5A63; --line: #C7D1CE;
+  --accent: #E3A500; --accent-ink: #7A5200; --on-accent: #1B1400;
+  --signal: #1F5FA8; --ok: #1B7A4B; --bad: #B23A2E;
+  --fc: #1F5FA8; --cn: #0B7764; --par: #C98F00;
+  --l1: #0B7A6B; --l2: #0A7391; --l3: #1662A8; --l4: #3150C2; --l5: #5A42B8; --l6: #7838A6; --l7: #933381;
+  --f-display: 'Archivo', 'Arial Narrow', Arial, sans-serif;
+  --f-body: 'Atkinson Hyperlegible', 'Segoe UI', Arial, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --fs-hero: clamp(2.6rem, 6.2vw, 5.4rem);
+  --fs-h: clamp(1.75rem, 3.4vw, 2.9rem);
+  --fs-lead: clamp(1.08rem, 1.6vw, 1.32rem);
+  --fs-body: 1.02rem;
+  --fs-small: .84rem;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D161B; --surface: #142128; --surface-2: #1B2B33; --ink: #E3EBE8; --ink-2: #9CAFB5; --line: #2B3C44;
+  --accent: #F2B92B; --accent-ink: #F2C450; --on-accent: #1B1400;
+  --signal: #7DB0EA; --ok: #5CC994; --bad: #F08273;
+  --fc: #7DB0EA; --cn: #5CCDB8; --par: #F2B92B;
+  --l1: #4FD1BC; --l2: #4FC3E0; --l3: #6AA9EC; --l4: #8C9EF5; --l5: #A797F2; --l6: #C390E8; --l7: #E28BD0;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0D161B; --surface: #142128; --surface-2: #1B2B33; --ink: #E3EBE8; --ink-2: #9CAFB5; --line: #2B3C44;
+  --accent: #F2B92B; --accent-ink: #F2C450; --on-accent: #1B1400;
+  --signal: #7DB0EA; --ok: #5CC994; --bad: #F08273;
+  --fc: #7DB0EA; --cn: #5CCDB8; --par: #F2B92B;
+  --l1: #4FD1BC; --l2: #4FC3E0; --l3: #6AA9EC; --l4: #8C9EF5; --l5: #A797F2; --l6: #C390E8; --l7: #E28BD0;
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: var(--fs-body); line-height: 1.5; overflow: hidden; }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto auto auto; grid-template-columns: minmax(0, 1fr); }
+
+/* Header */
+.bar { min-width: 0; display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.brand { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.brand b { color: var(--ink); font-weight: 600; }
+.sec-name { font-family: var(--f-mono); font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.counter { font-family: var(--f-mono); font-size: .8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tool { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; color: var(--ink-2); }
+.tool:hover, .tool[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-2); }
+.tool kbd { font-family: inherit; opacity: .6; margin-left: 4px; }
+
+/* Stage */
+.stage { position: relative; min-height: 0; overflow: hidden; }
+.slide { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; padding: clamp(20px, 4vw, 56px) clamp(16px, 5vw, 72px); }
+.slide > .wrap { width: 100%; max-width: 1200px; margin: auto; display: flex; flex-direction: column; gap: clamp(16px, 2.4vw, 28px); }
+.slide.enter > .wrap { animation: rise .42s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.slide aside.notes { display: none; }
+
+/* Type */
+.eyebrow { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent-ink); }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 80%; font-weight: 760; letter-spacing: -.012em; line-height: 1.03; text-wrap: balance; margin: 0; }
+h1 { font-size: var(--fs-hero); font-stretch: 72%; font-weight: 800; }
+h2 { font-size: var(--fs-h); }
+h3 { font-size: 1.22rem; font-stretch: 90%; font-weight: 700; letter-spacing: 0; line-height: 1.2; }
+p { margin: 0; }
+.lead { font-size: var(--fs-lead); color: var(--ink-2); max-width: 62ch; text-wrap: pretty; }
+.small { font-size: var(--fs-small); color: var(--ink-2); }
+.mono { font-family: var(--f-mono); }
+.mark { background: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent) 42%, transparent) 58%); padding: 0 .1em; }
+.head { display: flex; flex-direction: column; gap: 10px; }
+
+.say { font-family: var(--f-display); font-stretch: 86%; font-weight: 650; font-size: clamp(1.25rem, 2.2vw, 1.75rem); line-height: 1.2; text-wrap: balance; max-width: 34ch; }
+.say::before { content: "“"; color: var(--accent-ink); }
+.say::after { content: "”"; color: var(--accent-ink); }
+.say.wide { max-width: 48ch; }
+
+/* Building blocks */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(16px, 2.4vw, 32px); align-items: start; }
+.cols > * { min-width: 0; }
+.cols.w-6-4 { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: clamp(16px, 2vw, 24px); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.list { margin: 0; padding-left: 1.15em; display: flex; flex-direction: column; gap: 6px; }
+.list li::marker { color: var(--accent-ink); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--f-mono); font-size: .76rem; padding: 3px 8px; border-radius: 4px; background: var(--surface-2); color: var(--ink); white-space: nowrap; }
+.rule { height: 1px; background: var(--line); border: 0; margin: 0; width: 100%; }
+
+.btn { cursor: pointer; border: 1px solid var(--ink); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 7px; font-weight: 700; font-size: .95rem; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover { filter: brightness(1.12); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--ink-2); filter: none; }
+.btn.amber { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; background: var(--surface); }
+.seg button { cursor: pointer; border: 0; background: transparent; padding: 7px 14px; border-radius: 6px; font-size: .92rem; color: var(--ink-2); font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+.switch { cursor: pointer; display: inline-flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 4px 0; text-align: left; }
+.switch .track { width: 42px; height: 24px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); position: relative; flex: none; transition: background .2s; }
+.switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink-2); transition: transform .2s, background .2s; }
+.switch[aria-checked="true"] .track { background: var(--accent); border-color: var(--accent); }
+.switch[aria-checked="true"] .track::after { transform: translateX(18px); background: var(--on-accent); }
+
+.status { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: .8rem; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+.status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.status.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.status.neutral { color: var(--ink-2); background: var(--surface-2); }
+
+.lchip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: .76rem; font-weight: 600; padding: 3px 9px; border-radius: 5px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); white-space: nowrap; }
+
+/* Cover */
+.cover { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 72px); align-items: center; }
+.cover .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--f-mono); font-size: .8rem; color: var(--ink-2); }
+.cover .meta b { color: var(--ink); font-weight: 600; }
+.idcard { aspect-ratio: 85.6 / 53.98; width: 100%; max-width: 460px; justify-self: center; border-radius: 4.5% / 7%; background: linear-gradient(140deg, var(--surface) 0%, var(--surface-2) 100%); border: 1px solid var(--line); box-shadow: 0 30px 60px -30px color-mix(in srgb, var(--ink) 45%, transparent); position: relative; padding: 6% 7%; display: flex; flex-direction: column; justify-content: space-between; transform: rotate(-4deg); }
+.idcard .chip { width: 17%; aspect-ratio: 1.25; border-radius: 14%; background: linear-gradient(135deg, #D9B24A, #A9842A); position: relative; }
+.idcard .chip::before, .idcard .chip::after { content: ""; position: absolute; background: rgba(60,40,0,.35); }
+.idcard .chip::before { left: 0; right: 0; top: 48%; height: 1px; }
+.idcard .chip::after { top: 0; bottom: 0; left: 38%; width: 1px; }
+.idcard .waves { position: absolute; right: 9%; top: 34%; width: 16%; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--ink-2); opacity: .35; }
+.idcard .dim { font-family: var(--f-mono); font-size: clamp(.55rem, 1vw, .7rem); color: var(--ink-2); letter-spacing: .08em; }
+.cardbits { display: flex; gap: 1px; font-family: var(--f-mono); font-size: clamp(.5rem, 1.05vw, .78rem); }
+.cardbits span { flex: 1; text-align: center; padding: 3px 0; border-radius: 2px; }
+.cardbits .p { background: color-mix(in srgb, var(--par) 30%, transparent); }
+.cardbits .f { background: color-mix(in srgb, var(--fc) 20%, transparent); }
+.cardbits .c { background: color-mix(in srgb, var(--cn) 20%, transparent); }
+.cardlegend { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: clamp(.5rem, .9vw, .66rem); color: var(--ink-2); margin-top: 4px; }
+.hint { font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.hint kbd { font-family: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; background: var(--surface); color: var(--ink); }
+
+/* Journey */
+.journey { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0; position: relative; }
+.journey .node { cursor: pointer; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 4px; position: relative; text-align: center; }
+.journey .node::before { content: ""; position: absolute; top: 25px; left: 50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+.journey .node:last-child::before { display: none; }
+.journey .node.lit::before { background: var(--accent); }
+.journey .dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; font-family: var(--f-mono); font-size: .8rem; font-weight: 600; position: relative; z-index: 1; color: var(--ink-2); transition: background .25s, border-color .25s, color .25s; }
+.journey .node.lit .dot { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.journey .node.cur .dot { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent); }
+.journey .lbl { font-size: .86rem; font-weight: 700; line-height: 1.2; }
+.journey-detail { min-height: 5.2em; }
+.journey-detail .k { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+
+/* Layer stack */
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.stack .layer { cursor: pointer; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 12px; text-align: left; padding: 9px 14px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); background: color-mix(in srgb, var(--c) 8%, var(--surface)); transition: transform .18s, background .18s; }
+.stack .layer .n { font-family: var(--f-mono); font-weight: 600; color: var(--c); font-size: .95rem; }
+.stack .layer .nm { font-weight: 700; font-size: .98rem; line-height: 1.25; }
+.stack .layer .ex { display: block; font-size: .8rem; color: var(--ink-2); font-weight: 400; }
+.stack .layer[aria-pressed="true"] { background: color-mix(in srgb, var(--c) 22%, var(--surface)); border-color: var(--c); transform: translateX(6px); }
+.stack .outcome { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .14em; color: var(--ink-2); padding: 6px 14px; }
+.ldetail { border-top: 3px solid var(--c); }
+.ldetail .num { font-family: var(--f-mono); color: var(--c); font-weight: 600; letter-spacing: .1em; font-size: .8rem; }
+.trap { padding: 12px 14px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.trap .k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); display: block; margin-bottom: 2px; }
+
+/* Four questions */
+.qgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 14px; }
+.qcard { cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; transition: border-color .2s, transform .2s; }
+.qcard .qn { font-family: var(--f-mono); font-size: .76rem; color: var(--accent-ink); letter-spacing: .12em; }
+.qcard .qt { font-family: var(--f-display); font-stretch: 84%; font-weight: 720; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.1; }
+.qcard[aria-pressed="true"] { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 24px -16px color-mix(in srgb, var(--ink) 50%, transparent); }
+.lstrip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.lstrip span { font-family: var(--f-mono); font-size: .72rem; text-align: center; padding: 6px 2px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); transition: background .2s, color .2s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lstrip span.on { background: var(--c); color: var(--bg); font-weight: 600; }
+
+/* Tabs-like content */
+.tree { font-family: var(--f-mono); font-size: .88rem; line-height: 1.75; white-space: pre; overflow-x: auto; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 20px; margin: 0; }
+.tree .d { color: var(--ink-2); }
+
+/* Timeline */
+.tl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tl button { cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tl button .f { font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); letter-spacing: .06em; }
+.tl button .t { font-family: var(--f-display); font-stretch: 84%; font-weight: 740; font-size: 1.3rem; line-height: 1.1; }
+.tl button .s { font-size: .82rem; color: var(--ink-2); }
+.tl button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.tl-arrow { font-family: var(--f-mono); color: var(--ink-2); font-size: .74rem; letter-spacing: .1em; }
+
+/* Ladder */
+.ladder { display: flex; flex-direction: column-reverse; gap: 8px; }
+.rung { cursor: pointer; display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 12px 14px; }
+.rung .lv { font-family: var(--f-mono); font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.rung .meter { display: flex; gap: 3px; margin-top: 6px; }
+.rung .meter i { height: 6px; flex: 1; border-radius: 2px; background: var(--surface-2); }
+.rung .meter i.on { background: var(--accent); }
+.rung[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.jump { font-family: var(--f-mono); font-size: .74rem; color: var(--accent-ink); letter-spacing: .08em; text-transform: uppercase; padding-left: 134px; }
+
+/* Generations */
+.gen { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.gen .arrow { align-self: center; font-family: var(--f-mono); color: var(--ink-2); font-size: 1.4rem; }
+.gen .panel.now { border-color: var(--accent); }
+.spec { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: .95rem; }
+.spec dt { font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); padding-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+.spec dd { margin: 0; font-weight: 700; }
+
+/* Apps on a chip */
+.chipbase { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.chipbase .t { font-family: var(--f-display); font-stretch: 84%; font-weight: 760; font-size: 1.35rem; }
+.apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.apps button { cursor: pointer; text-align: left; border: 1px dashed color-mix(in srgb, var(--l4) 60%, transparent); background: color-mix(in srgb, var(--l4) 7%, var(--surface)); border-radius: 8px; padding: 10px 12px; font-weight: 700; font-size: .93rem; min-width: 0; }
+.apps button small { display: block; font-weight: 400; color: var(--ink-2); font-size: .78rem; font-family: var(--f-mono); }
+.apps button[aria-pressed="true"] { border-style: solid; border-color: var(--l4); background: color-mix(in srgb, var(--l4) 18%, var(--surface)); }
+.spectrum { display: flex; flex-direction: column; gap: 8px; }
+.spectrum .bar { position: relative; height: 10px; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb, var(--l6) 55%, transparent), color-mix(in srgb, var(--l1) 55%, transparent)); }
+.spectrum .pin { position: absolute; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 3px solid var(--ink); transform: translateX(-50%); }
+.spectrum .ends { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); letter-spacing: .06em; text-transform: uppercase; gap: 12px; }
+.spectrum .names { position: relative; height: 1.6em; font-size: .86rem; font-weight: 700; }
+.spectrum .names span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+
+/* Beep ladder */
+.steps7 { display: flex; flex-direction: column; gap: 5px; }
+.steps7 button { cursor: pointer; display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 8px 12px; font-size: .94rem; }
+.steps7 button .n { font-family: var(--f-mono); font-weight: 600; color: var(--ink-2); }
+.steps7 button.pass { border-color: color-mix(in srgb, var(--ok) 50%, transparent); background: color-mix(in srgb, var(--ok) 9%, var(--surface)); }
+.steps7 button.fail { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--surface)); }
+.steps7 button.skip { opacity: .5; }
+
+/* Transport lanes */
+.lanes { display: flex; flex-direction: column; gap: 12px; }
+.lane { display: grid; grid-template-columns: 120px 1fr 150px; align-items: center; gap: 12px; }
+.lane .end { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px; font-weight: 700; font-size: .9rem; text-align: center; line-height: 1.2; }
+.lane .end small { display: block; font-weight: 400; font-family: var(--f-mono); font-size: .7rem; color: var(--ink-2); }
+.wire { position: relative; height: 56px; border-radius: 8px; border: 1px dashed var(--line); transition: opacity .25s; }
+.wire .name { position: absolute; left: 12px; bottom: 4px; font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); }
+.lane.off .wire { opacity: .35; }
+.packet { position: absolute; top: 6px; left: 6px; font-family: var(--f-mono); font-size: .74rem; font-weight: 600; padding: 4px 9px; border-radius: 5px; background: var(--accent); color: var(--on-accent); white-space: nowrap; transition: left 1.1s cubic-bezier(.5,0,.3,1); }
+.packet.go { left: calc(100% - 6px); transform: translateX(-100%); }
+.decoded { font-family: var(--f-mono); font-size: .76rem; color: var(--ok); }
+
+/* Domains */
+.domain { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; }
+.domain .box { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 10px; text-align: center; font-weight: 700; font-size: .9rem; }
+.domain .link { font-family: var(--f-mono); font-size: .72rem; text-align: center; padding: 4px 8px; border-radius: 5px; white-space: nowrap; }
+.link.good { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.link.weak { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.verdict { font-family: var(--f-display); font-stretch: 86%; font-weight: 700; font-size: 1.3rem; line-height: 1.2; }
+
+/* Bits */
+.bits-scroll { overflow-x: auto; padding-bottom: 4px; }
+.bits { display: flex; gap: 3px; min-width: max-content; }
+.bit { width: 34px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.bit button { cursor: pointer; width: 34px; height: 42px; border-radius: 5px; border: 1.5px solid var(--fcol); background: color-mix(in srgb, var(--fcol) 16%, var(--surface)); font-family: var(--f-mono); font-weight: 600; font-size: 1.05rem; color: var(--ink); transition: transform .12s; }
+.bit button:hover { transform: translateY(-2px); }
+.bit button.edited { box-shadow: 0 0 0 2px var(--bad); }
+.bit .ix { font-family: var(--f-mono); font-size: .62rem; color: var(--ink-2); }
+.bit.p { --fcol: var(--par); } .bit.f { --fcol: var(--fc); } .bit.c { --fcol: var(--cn); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1.5px solid var(--k); background: color-mix(in srgb, var(--k) 18%, transparent); }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.readout .cell { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 4px; }
+.readout .k { font-family: var(--f-mono); font-size: .7rem; color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; }
+.readout .v { font-family: var(--f-mono); font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-family: var(--f-mono); font-size: .72rem; color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; }
+.field input { font-family: var(--f-mono); font-size: 1.1rem; padding: 7px 10px; width: 130px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end; }
+
+/* Format bars */
+.fbars { display: flex; flex-direction: column; gap: 14px; }
+.fbar .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.fbar .top b { font-family: var(--f-mono); font-size: .95rem; }
+.fbar .row { display: flex; gap: 2px; height: 40px; }
+.fbar .seg-f { border-radius: 4px; display: grid; place-items: center; font-family: var(--f-mono); font-size: .72rem; font-weight: 600; overflow: hidden; white-space: nowrap; border: 1.5px solid var(--fcol); background: color-mix(in srgb, var(--fcol) 16%, var(--surface)); color: var(--ink); min-width: 14px; }
+.seg-f.p { --fcol: var(--par); } .seg-f.f { --fcol: var(--fc); } .seg-f.c { --fcol: var(--cn); }
+.defines { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Byte order */
+.bytes { display: flex; gap: 14px; flex-wrap: wrap; }
+.byte { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.byte .hx { font-family: var(--f-mono); font-size: 1.8rem; font-weight: 600; padding: 6px 14px; border-radius: 7px; border: 1.5px solid var(--bc); background: color-mix(in srgb, var(--bc) 14%, var(--surface)); transition: transform .35s; }
+.byte .bn { font-family: var(--f-mono); font-size: .74rem; color: var(--ink-2); letter-spacing: .05em; }
+
+/* Format switches */
+.fmtlist { display: flex; flex-direction: column; gap: 8px; }
+.fmtrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: var(--surface); }
+.fmtrow .nm { font-weight: 700; }
+.fmtrow .nm small { display: block; font-weight: 400; font-family: var(--f-mono); font-size: .74rem; color: var(--ink-2); }
+.fmtrow.shake { animation: shake .35s; border-color: var(--bad); }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.alert { border-radius: 8px; padding: 10px 14px; background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--ink); font-size: .92rem; }
+.alert b { color: var(--bad); }
+
+/* Troubleshooter */
+.tsteps { display: flex; flex-direction: column; gap: 4px; counter-reset: s; }
+.tsteps li { list-style: none; display: grid; grid-template-columns: 30px 1fr; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: .9rem; color: var(--ink-2); align-items: center; }
+.tsteps li .n { font-family: var(--f-mono); font-weight: 600; }
+.tsteps li.done { color: var(--ok); }
+.tsteps li.cur { color: var(--ink); background: color-mix(in srgb, var(--accent) 16%, transparent); font-weight: 700; }
+.tsteps li.fail { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); font-weight: 700; }
+.tq { font-family: var(--f-display); font-stretch: 86%; font-weight: 720; font-size: clamp(1.3rem, 2.2vw, 1.7rem); line-height: 1.15; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.symlist { display: flex; flex-direction: column; gap: 5px; }
+.symlist button { cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 8px 12px; font-size: .92rem; }
+.symlist button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); font-weight: 700; }
+
+/* Myths */
+.myths { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 10px; }
+.myth { cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px; min-height: 132px; display: flex; flex-direction: column; gap: 8px; }
+.myth .k { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--bad); }
+.myth .t { font-weight: 700; font-size: 1rem; line-height: 1.3; }
+.myth .b { display: none; font-size: .9rem; line-height: 1.4; }
+.myth[aria-pressed="true"] { background: color-mix(in srgb, var(--ok) 9%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+.myth[aria-pressed="true"] .k { color: var(--ok); }
+.myth[aria-pressed="true"] .t { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 70%, transparent); color: var(--ink-2); font-weight: 400; font-size: .86rem; }
+.myth[aria-pressed="true"] .b { display: block; }
+
+/* Quiz */
+.term { font-family: var(--f-display); font-stretch: 78%; font-weight: 800; font-size: clamp(2.4rem, 5.4vw, 4.4rem); line-height: 1; }
+.answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 6px; }
+.answers button { cursor: pointer; text-align: left; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 7%, var(--surface)); border-radius: 7px; padding: 9px 11px; font-size: .9rem; font-weight: 700; display: flex; gap: 8px; align-items: baseline; }
+.answers button .n { font-family: var(--f-mono); color: var(--c); }
+.answers button.right { background: color-mix(in srgb, var(--ok) 20%, var(--surface)); border-color: var(--ok); }
+.answers button.wrong { background: color-mix(in srgb, var(--bad) 15%, var(--surface)); border-color: var(--bad); }
+.answers button:disabled { cursor: default; }
+.score { font-family: var(--f-mono); font-size: .85rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* Chain */
+.chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chain button { cursor: pointer; border: 2px solid var(--ok); background: color-mix(in srgb, var(--ok) 9%, var(--surface)); border-radius: 22px; padding: 9px 16px; font-size: .9rem; font-weight: 700; }
+.chain button[aria-pressed="true"] { border-color: var(--bad); border-style: dashed; background: color-mix(in srgb, var(--bad) 10%, var(--surface)); color: var(--bad); }
+.chain .plus { font-family: var(--f-mono); color: var(--ink-2); }
+
+/* Recap */
+.fourq { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.fourq div { padding: 18px 18px 18px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.fourq .qn { font-family: var(--f-mono); font-size: .76rem; color: var(--accent-ink); letter-spacing: .12em; }
+.fourq .qt { font-family: var(--f-display); font-stretch: 80%; font-weight: 780; font-size: clamp(1.5rem, 2.7vw, 2.2rem); line-height: 1.05; }
+
+/* Footer rail */
+.rail { display: flex; align-items: center; gap: 12px; padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--bg); }
+.navbtn { cursor: pointer; flex: none; width: 40px; height: 36px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); font-family: var(--f-mono); font-size: 1rem; color: var(--ink); }
+.navbtn:hover { border-color: var(--ink-2); }
+.navbtn:disabled { opacity: .35; cursor: default; }
+.ticks { flex: 1; display: flex; gap: 3px; align-items: center; min-width: 0; }
+.ticks button { cursor: pointer; flex: 1; height: 8px; border: 0; padding: 0; border-radius: 2px; background: var(--surface-2); min-width: 4px; }
+.ticks button.sec { margin-left: 8px; }
+.ticks button.seen { background: color-mix(in srgb, var(--accent) 45%, var(--surface-2)); }
+.ticks button.cur { background: var(--accent); height: 14px; }
+
+/* Overlays */
+.overlay { position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); overflow-y: auto; padding: calc(24px + env(safe-area-inset-top, 0px)) clamp(16px, 5vw, 64px) 32px; }
+.overlay .in { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.overlay .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ovsec { display: flex; flex-direction: column; gap: 8px; }
+.ovgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.ovgrid button { cursor: pointer; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: baseline; font-size: .92rem; font-weight: 700; }
+.ovgrid button .n { font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); font-weight: 500; }
+.ovgrid button.cur { border-color: var(--accent); }
+/* Narration */
+.narr { display: flex; align-items: center; gap: 12px; padding: 8px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+.narr .play { cursor: pointer; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.narr .play svg { width: 14px; height: 14px; fill: currentColor; }
+.narr .lbl { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.narr .opt .sm { display: none; }
+.narr .track { flex: 1; min-width: 40px; height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; cursor: pointer; }
+.narr .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--accent); width: 0; }
+.narr .time { font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.narr .opt { cursor: pointer; border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 4px 9px; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.narr .opt[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-2); background: var(--surface-2); }
+.navbtn.pulse { border-color: var(--accent); background: var(--accent); color: var(--on-accent); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 25%, transparent); } }
+.captions { max-height: 24vh; overflow-y: auto; border-top: 1px solid var(--line); background: var(--surface); padding: 12px clamp(16px, 5vw, 72px); display: flex; flex-direction: column; gap: 6px; }
+.captions .k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+.captions p { font-size: .95rem; line-height: 1.55; max-width: 80ch; }
+.start { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+@media (max-width: 860px) { .narr .lbl { display: none; } .narr { padding: 8px 16px; gap: 8px; } }
+@media (max-width: 520px) { .narr .opt .lg { display: none; } .narr .opt .sm { display: inline; } .narr .opt { padding: 4px 7px; } .narr .time { font-size: .7rem; } }
+.notes-panel { position: fixed; right: 16px; bottom: 132px; z-index: 15; width: min(440px, calc(100% - 32px)); max-height: 46vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 20px 50px -20px color-mix(in srgb, var(--ink) 50%, transparent); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.notes-panel .k { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); display: flex; justify-content: space-between; }
+.notes-panel p { font-size: .92rem; line-height: 1.5; }
+
+@media (max-width: 860px) {
+  .cover { grid-template-columns: 1fr; }
+  .idcard { max-width: 340px; }
+  .cols.w-6-4 { grid-template-columns: 1fr; }
+  .tl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gen { grid-template-columns: 1fr; }
+  .gen .arrow { transform: rotate(90deg); justify-self: center; }
+  .journey { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 14px; }
+  .journey .node:nth-child(4)::before { display: none; }
+  .lane { grid-template-columns: 90px 1fr 100px; }
+  .rung { grid-template-columns: 1fr; gap: 4px; }
+  .jump { padding-left: 0; }
+  .brand { display: none; }
+  .tool kbd { display: none; }
+}
+@media (max-width: 520px) {
+  .lane { grid-template-columns: 1fr; }
+  .lane .end { text-align: left; }
+  .domain { grid-template-columns: 1fr; }
+  .apps { grid-template-columns: 1fr; }
+  .ticks button.sec { margin-left: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <span class="brand"><b>From Card to Door</b> · Secure Entry</span>
+    <span class="sec-name" id="secName"></span>
+    <span class="counter" id="counter"></span>
+    <button class="tool" id="ovBtn" aria-pressed="false">Slides<kbd>O</kbd></button>
+    <button class="tool" id="notesBtn" aria-pressed="false">Notes<kbd>N</kbd></button>
+  </header>
+
+  <main class="stage" id="stage">
+
+  <!-- 1 -->
+  <section class="slide" data-title="From card to door" data-section="Orientation">
+    <div class="wrap">
+      <div class="cover">
+        <div class="head" style="gap:22px">
+          <span class="eyebrow">AXIS Camera Station Pro · Secure Entry training</span>
+          <h1>From card to door</h1>
+          <p class="lead">Credentials, readers, protocols, card formats and troubleshooting. One mental model you can use on any access-control system.</p>
+          <div class="meta"><span><b>For</b> new Field Sales Engineers</span><span><b>Length</b> about 60 minutes</span></div>
+          <div class="start">
+            <button class="btn amber" id="startNarr">Start the narrated course</button>
+            <button class="btn ghost" id="resumeBtn" hidden></button>
+          </div>
+          <div class="hint"><span><kbd>K</kbd> play / pause narration</span><span><kbd>→</kbd> <kbd>Space</kbd> next</span><span><kbd>←</kbd> back</span><span><kbd>O</kbd> all slides</span><span><kbd>N</kbd> presenter notes</span></div>
+        </div>
+        <div class="idcard" aria-label="An access card printed with the 26 bits for facility code 42, card number 12345">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="chip"></div>
+            <span class="dim">ID-1 · 85.60 × 53.98 mm</span>
+          </div>
+          <div class="waves"></div>
+          <div>
+            <div class="cardbits" id="coverBits"></div>
+            <div class="cardlegend"><span>P</span><span>facility code 42</span><span>card number 12345</span><span>P</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Open with a physical card in your hand. The goal of the hour is a mental model, not memorizing every technology or HID format number. If trainees leave able to ask "which layer are we talking about?", the session has succeeded.</aside>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-title="What happens at the door" data-section="Orientation">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Start with the journey</span>
+        <h2>“When I present this card and the door opens, what actually happened?”</h2>
+      </div>
+      <div class="journey" id="journey"></div>
+      <div class="panel journey-detail" id="journeyDetail" aria-live="polite"></div>
+      <div class="btnrow">
+        <button class="btn amber" id="journeyPlay">Present the card</button>
+        <button class="btn ghost" id="journeyReset">Reset</button>
+      </div>
+    </div>
+    <aside class="notes">0–5 min. Ask the room before pressing the button. Write their answers on a whiteboard, then play the journey. Don't start with acronyms. This journey is where everything that follows gets placed.</aside>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-title="The seven-layer model" data-section="Orientation">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The backbone of the session</span>
+        <h2>Which layer are we talking about?</h2>
+      </div>
+      <div class="cols w-6-4">
+        <div class="stack" id="stack"></div>
+        <div class="panel ldetail" id="layerDetail" aria-live="polite"></div>
+      </div>
+      <p class="say wide">Credential security and reader-bus security are separate security problems.</p>
+    </div>
+    <aside class="notes">Click each layer. Points this model untangles: a 26-bit format doesn't need a Wiegand connection; an OSDP reader can deliver 26-bit data; a DESFire EV3 chip doesn't tell you which application is on it; a reader can detect a card without the keys to its protected application; a reader can authenticate perfectly and still send data the controller decodes wrongly; a system can have secure credentials and an insecure reader link, or the reverse.</aside>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-title="Four field questions" data-section="Orientation">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The field version</span>
+        <h2>Four questions to ask at every door</h2>
+        <p class="lead">Select a question to see which layers it covers.</p>
+      </div>
+      <div class="qgrid" id="qgrid"></div>
+    </div>
+    <aside class="notes">These four questions come back at the end of the session. If trainees remember only these, the session worked.</aside>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-title="125 kHz vs 13.56 MHz" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Credential families · layer 2</span>
+        <h2>Two RF neighborhoods</h2>
+      </div>
+      <div><div class="seg" role="group" aria-label="Frequency"><button aria-pressed="true" data-freq="lf">125 kHz low frequency</button><button aria-pressed="false" data-freq="hf">13.56 MHz high frequency</button></div></div>
+      <div id="freq-lf" class="cols">
+        <div class="panel">
+          <h3>Proximity, or “Prox”</h3>
+          <ul class="list">
+            <li>Usually a static identifier</li>
+            <li>Generally no modern mutual authentication</li>
+            <li>Often chosen for compatibility, not credential security</li>
+            <li>An easy migration target when a customer modernizes</li>
+          </ul>
+          <div class="tags"><span class="tag">HID Prox</span><span class="tag">Indala</span><span class="tag">AWID</span><span class="tag">EM family</span></div>
+          <p class="small">“Prox” is a broad legacy family. HID Prox is the best-known one, but Prox does not mean HID.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <p class="say">125 kHz Prox solved convenience. It was not designed for the threat model we have today.</p>
+          <p class="lead"><span class="mark">“The card works” and “the card is secure” are not the same thing.</span></p>
+        </div>
+      </div>
+      <div id="freq-hf" class="cols" hidden>
+<pre class="tree">13.56 MHz
+<span class="d">│</span>
+<span class="d">├──</span> MIFARE family
+<span class="d">│   ├──</span> MIFARE Classic
+<span class="d">│   ├──</span> MIFARE Plus
+<span class="d">│   └──</span> MIFARE DESFire
+<span class="d">│       └──</span> EV1 → EV2 → EV3
+<span class="d">│</span>
+<span class="d">├──</span> HID ecosystem
+<span class="d">│   ├──</span> legacy iCLASS
+<span class="d">│   ├──</span> iCLASS SE / SIO deployments
+<span class="d">│   └──</span> Seos
+<span class="d">│</span>
+<span class="d">└──</span> Other ISO 14443 / smart-card ecosystems</pre>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <p class="say">13.56 MHz tells you the RF neighborhood. It does not tell you the security model.</p>
+          <p class="lead">A 13.56 MHz card can be a simple legacy implementation, or it can use modern cryptography and protected applications.</p>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">5–15 min. Don't teach RF physics. The tree is intentionally simplified: the goal is categories, not a smart-card standards lecture. Avoid saying every 125 kHz credential is identical or that every Prox product is HID.</aside>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-title="HID: Prox to Seos" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Credential families · layers 3 and 4</span>
+        <h2>HID, from Prox to Seos</h2>
+      </div>
+      <div class="tl" id="hidTl"></div>
+      <div class="panel" id="hidDetail" aria-live="polite"></div>
+      <p class="say wide">The credential chip and the identity application are not necessarily the same thing.</p>
+    </div>
+    <aside class="notes">Separate RF standard, credential technology, HID application and security model, and PACS output format. Legacy iCLASS should not be presented as equivalent to Seos. No need to go into published iCLASS attacks unless asked. The SIO-on-DESFire point is a strong demonstration of the layer model.</aside>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-title="MIFARE DESFire" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Credential families · layer 3</span>
+        <h2>What “MIFARE DESFire” actually means</h2>
+      </div>
+      <div class="cols">
+        <div class="panel">
+          <dl class="spec">
+            <dt>MIFARE</dt><dd>An NXP product brand and family, not a company</dd>
+            <dt>DESFire</dt><dd>A smart-card IC family sold under the MIFARE brand</dd>
+            <dt>Built on</dt><dd>ISO/IEC 14443A air interface and standard cryptography, including AES</dd>
+            <dt>Model</dt><dd>Multi-application: independent applications can share one card</dd>
+          </dl>
+          <hr class="rule">
+          <p class="say" style="font-size:1.25rem">DESFire is a broadly supported secure smart-card platform, not an open-source credential.</p>
+        </div>
+        <div class="panel">
+          <h3>EV1 → EV2 → EV3 is an evolution</h3>
+          <div class="seg" role="group" aria-label="DESFire generation" id="evSeg"><button aria-pressed="false" data-ev="0">EV1</button><button aria-pressed="false" data-ev="1">EV2</button><button aria-pressed="true" data-ev="2">EV3</button></div>
+          <p id="evText" aria-live="polite"></p>
+          <hr class="rule">
+          <p><b>The chip version and the application profile are separate.</b> Real interoperability depends on:</p>
+          <div class="tags"><span class="tag">reader</span><span class="tag">application</span><span class="tag">keys</span><span class="tag">commands</span><span class="tag">configuration</span></div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Why DESFire feels "more open": many reader vendors support it, many access-control vendors build applications on it, and a customer can, in the right architecture, keep control of its own application and keys. That is very different from "open source". Don't teach "EV3 cards work with EV2 readers". Teach: an EV3 chip is designed for backward compatibility, but interoperability depends on reader, application, keys, commands and configuration.</aside>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-title="The security ladder" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Does EV3 automatically mean more secure?</span>
+        <h2>Climb the security ladder</h2>
+        <p class="lead">An EV3 card read only by its public identifier is not a high-security deployment. Select a rung.</p>
+      </div>
+      <div class="cols w-6-4">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="ladder" id="ladder"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="panel" id="ladderDetail" aria-live="polite"></div>
+          <p class="say">The biggest security jump is not EV2 → EV3. It is static identity → properly authenticated secure credential.</p>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">With mutual authentication, AES protection and good key management, an EV2 implementation can already give very strong credential security. EV3 adds capabilities, but only the features actually used count.</aside>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-title="Axis credential generations" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Products you will see</span>
+        <h2>Axis credential generations</h2>
+      </div>
+      <div class="gen">
+        <div class="panel">
+          <span class="eyebrow" style="color:var(--ink-2)">Previous generation</span>
+          <dl class="spec">
+            <dt>Card</dt><dd>AXIS TA4701 Access Card</dd>
+            <dt>Fob</dt><dd>AXIS TA4702 Key Fob</dd>
+            <dt>Chip</dt><dd>MIFARE DESFire EV2</dd>
+            <dt>Memory</dt><dd>2K</dd>
+          </dl>
+        </div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="panel now">
+          <span class="eyebrow">Current generation</span>
+          <dl class="spec">
+            <dt>Card</dt><dd>AXIS TA4711 Access Card</dd>
+            <dt>Fob</dt><dd>AXIS TA4712 Key Fob</dd>
+            <dt>Chip</dt><dd>MIFARE DESFire EV3</dd>
+            <dt>Memory</dt><dd>8K</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+          <h3>Will a TA4711 work with this reader?</h3>
+          <div class="seg" role="group" aria-label="Reader" id="axReader"><button aria-pressed="true" data-r="old">A4020-E / A4120-E</button><button aria-pressed="false" data-r="new">A4030-E / A4131-E</button></div>
+        </div>
+        <p id="axText" aria-live="polite"></p>
+      </div>
+      <p class="say wide">“EV3 card” and “uses EV3-only features” are not synonymous.</p>
+    </div>
+    <aside class="notes">Always check the exact product, firmware and application compatibility rather than inferring from the chip generation. OPEN ITEM: we discussed a possible limit on the secret key that can be programmed into an Axis credential. Do not teach a specific key-length or key-value limitation until Product Management or Access Control specialists confirm it.</aside>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-title="One chip, many applications" data-section="Credentials">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Application versus chip · layer 4</span>
+        <h2>One chip, many applications</h2>
+      </div>
+      <div class="cols">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="chipbase"><span class="eyebrow" style="color:var(--ink-2)">Platform</span><span class="t">MIFARE DESFire EV3</span><span class="small">Secure multi-application smart card. Vendors build on top of it.</span></div>
+          <div class="apps" id="apps"></div>
+          <div class="panel" id="appDetail" aria-live="polite"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <p class="say">Using DESFire does not automatically make a deployment open.</p>
+          <div class="spectrum" aria-label="Conceptual spectrum from vendor-controlled to multi-vendor">
+            <div class="names"><span style="left:18%">Seos ecosystem</span><span style="left:78%">DESFire platform</span></div>
+            <div class="bar"><span class="pin" style="left:18%"></span><span class="pin" style="left:78%"></span></div>
+            <div class="ends"><span>More vendor-controlled</span><span>More multi-vendor use</span></div>
+            <p class="small">Conceptual, not a scorecard. Both can support modern cryptographic access control. Open and secure are different axes.</p>
+          </div>
+          <div class="panel">
+            <h3>Better “open architecture” questions</h3>
+            <ul class="list small" style="color:var(--ink)">
+              <li>Who owns the credential keys?</li>
+              <li>Who can issue new credentials?</li>
+              <li>Can the customer change reader vendors?</li>
+              <li>Is the PACS ID portable, or does migration mean new cards?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">2N PICard is not a competing card technology to DESFire; it is an application on it. Keep the DESFire vs Seos discussion to about three minutes. Avoid "which is secure, Seos or DESFire?". Both can be. The larger difference is the ecosystem and who controls the credential application and keys. Other good questions: can multiple applications coexist on the credential? Is the application spec available? Can another integrator manage the system later?</aside>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-title="A beep is not enough" data-section="Readers and transport">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Reader compatibility</span>
+        <h2>“It beeps” is not enough</h2>
+        <p class="lead">Compatibility exists at seven levels. Select where the reader stops, and see the symptom it produces.</p>
+      </div>
+      <div class="cols">
+        <div class="steps7" id="beep"></div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="panel" id="beepDetail" aria-live="polite"></div>
+          <p class="say">A beep proves RF interaction. It does not prove secure credential interoperability.</p>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Example: modern HID Signo readers support combinations of HID Prox, iCLASS, Seos, MIFARE Classic, DESFire EV1/EV2/EV3, OSDP and Wiegand. So "the customer has HID readers" is not enough. Ask: which model, firmware or configuration, RF technology, UID/CSN or protected application, which secure application, who owns the keys, what does the reader output, Wiegand or OSDP?</aside>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-title="Wiegand: two meanings" data-section="Readers and transport">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Layer 5 or layer 6?</span>
+        <h2>Why “Wiegand” causes so much confusion</h2>
+      </div>
+      <div class="cols">
+        <div class="panel"><span class="lchip" style="--c:var(--l6)">Layer 6 · Transport</span><h3>Wiegand as an interface</h3><p>Classic reader wiring that carries credential data from reader to controller on data lines.</p></div>
+        <div class="panel"><span class="lchip" style="--c:var(--l5)">Layer 5 · PACS format</span><h3>Wiegand as a format family</h3><p>“26-bit Wiegand”, “37-bit Wiegand”: how the credential data is organized into bits.</p></div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+          <h3>Send the same 26-bit credential two ways</h3>
+          <div class="btnrow">
+            <div class="seg" role="group" aria-label="Transport" id="laneSeg"><button aria-pressed="true" data-lane="w">Wiegand</button><button aria-pressed="false" data-lane="o">OSDP</button></div>
+            <button class="btn amber" id="sendBtn">Send</button>
+          </div>
+        </div>
+        <div class="lanes" id="lanes">
+          <div class="lane" data-lane="w"><div class="end">Reader</div><div class="wire"><span class="packet">26-bit H10301 · FC 42 · CN 12345</span><span class="name">Wiegand · Data0/Data1 · one-way</span></div><div class="end">Controller<small class="decoded" hidden>FC 42 · CN 12345</small></div></div>
+          <div class="lane off" data-lane="o"><div class="end">Reader</div><div class="wire"><span class="packet">26-bit H10301 · FC 42 · CN 12345</span><span class="name">OSDP · RS-485 · two-way, supervised</span></div><div class="end">Controller<small class="decoded" hidden>FC 42 · CN 12345</small></div></div>
+        </div>
+        <p class="small">The payload is identical on both lanes. Either way, the controller still needs to know how to interpret the bits.</p>
+      </div>
+      <p class="say wide">“26-bit” describes the data. “OSDP” describes how the reader communicates it.</p>
+    </div>
+    <aside class="notes">One of the most important teaching sections. Demo 4: if the lab can't easily switch between Wiegand and OSDP, use this slide instead of rewiring hardware.</aside>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-title="Two security domains" data-section="Readers and transport">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">OSDP, Secure Channel and Axis reader types</span>
+        <h2>Secure both links, or the chain has a gap</h2>
+      </div>
+      <div class="cols">
+        <div class="panel">
+          <div class="domain">
+            <div class="box">Credential</div><span class="link" id="dl1"></span><div class="box">Reader</div><span class="link" id="dl2"></span><div class="box">Controller</div>
+          </div>
+          <button class="switch" role="switch" aria-checked="false" id="swCred"><span class="track"></span><span>Authenticated secure credential <span class="small">(off: static UID or Prox)</span></span></button>
+          <button class="switch" role="switch" aria-checked="false" id="swBus"><span class="track"></span><span>OSDP Secure Channel <span class="small">(off: plain Wiegand wiring)</span></span></button>
+          <p class="verdict" id="verdict" aria-live="polite"></p>
+        </div>
+        <div class="panel">
+          <h3>Reader types in Secure Entry</h3>
+          <div class="seg" role="group" aria-label="Reader type" id="rtSeg"><button aria-pressed="true" data-rt="0">OSDP</button><button aria-pressed="false" data-rt="1">SSCP</button><button aria-pressed="false" data-rt="2">Wiegand</button><button aria-pressed="false" data-rt="3">IP reader</button></div>
+          <div id="rtText" aria-live="polite" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">OSDP = Open Supervised Device Protocol: bidirectional, reader supervision, addressable devices, richer device control, Secure Channel option. Don't make the course anti-Wiegand: there is an enormous installed base. The goal is to explain why modern designs prefer OSDP when supported.</aside>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-title="What a card format defines" data-section="Card formats">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Layer 5 · PACS data format</span>
+        <h2>A format is a way to read a row of bits</h2>
+        <p class="lead">The raw bitstream doesn't carry a label that says “I am H10304”. The system has to know how to interpret it.</p>
+      </div>
+      <div class="defines">
+        <span class="tag">total bit length</span><span class="tag">facility code location</span><span class="tag">card number location</span><span class="tag">parity locations</span><span class="tag">parity coverage</span><span class="tag">field sizes</span><span class="tag">field order</span><span class="tag">bit order</span><span class="tag">byte order</span><span class="tag">decimal or hex</span>
+      </div>
+      <div class="panel">
+        <div class="fbars" id="fbars"></div>
+        <div class="legend"><span><i style="--k:var(--par)"></i>parity</span><span><i style="--k:var(--fc)"></i>facility code</span><span><i style="--k:var(--cn)"></i>card number</span></div>
+      </div>
+      <p class="say wide">Bit length tells you how much data arrived. Format tells you what the bits mean.</p>
+    </div>
+    <aside class="notes">H10301 is HID's designation for the familiar open 26-bit format. H10302 and H10304 are both 37 bits and mean different things. "37-bit" is not a complete card-format definition.</aside>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide" data-title="Decode a 26-bit card" data-section="Card formats">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Exercise · H10301</span>
+        <h2>Decode a 26-bit card</h2>
+        <p class="lead">Change the facility code or card number, flip any bit, or change how Secure Entry reads the fields.</p>
+      </div>
+      <div class="controls">
+        <div class="field"><label for="decFc">Facility code (0–255)</label><input id="decFc" type="number" min="0" max="255" value="42" inputmode="numeric"></div>
+        <div class="field"><label for="decCn">Card number (0–65535)</label><input id="decCn" type="number" min="0" max="65535" value="12345" inputmode="numeric"></div>
+        <div class="field"><label>Secure Entry reads the card number from</label><div class="seg" role="group" aria-label="Interpretation" id="decMode"><button aria-pressed="true" data-m="ok">Bits 10–25 (correct)</button><button aria-pressed="false" data-m="bad">Bits 2–17 (misconfigured)</button></div></div>
+        <button class="btn ghost" id="decReset">Reset bits</button>
+      </div>
+      <div class="bits-scroll"><div class="bits" id="decBits"></div></div>
+      <div class="legend"><span><i style="--k:var(--par)"></i>parity</span><span><i style="--k:var(--fc)"></i>facility code field</span><span><i style="--k:var(--cn)"></i>card number field</span><span>Select a bit to flip it</span></div>
+      <div class="readout" id="decOut"></div>
+      <p class="lead" id="decMsg" aria-live="polite" style="color:var(--ink)"></p>
+    </div>
+    <aside class="notes">Ask trainees to identify: total length, leading parity bit, facility code field, card number field, trailing parity bit. Then switch to "misconfigured" and ask: "If ACS thought bits 2–17 were the card number, would the reader fail?" No. The reader works perfectly; the controller interprets good data incorrectly. Leading parity is even over bits 1–13; trailing parity is odd over bits 14–26.</aside>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-title="Bit order and byte order" data-section="Card formats">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Secure Entry custom card formats</span>
+        <h2>Right bits, wrong direction</h2>
+        <p class="lead">Two readers send the same credential. Secure Entry expects <b class="mono">0xFB4C</b>. Pick a reader, then fix the interpretation.</p>
+      </div>
+      <div class="cols w-6-4">
+        <div class="panel">
+          <div class="controls">
+            <div class="field"><label>Incoming from</label><div class="seg" role="group" aria-label="Reader" id="boReader"><button aria-pressed="true" data-r="a">Reader A</button><button aria-pressed="false" data-r="b">Reader B</button></div></div>
+          </div>
+          <div class="field"><label>Raw bytes</label><div class="bytes" id="boRaw"></div></div>
+          <button class="switch" role="switch" aria-checked="false" id="boByte"><span class="track"></span><span>Invert byte order</span></button>
+          <button class="switch" role="switch" aria-checked="false" id="boBit"><span class="track"></span><span>Invert bit order</span></button>
+          <hr class="rule">
+          <div class="readout" id="boOut"></div>
+          <p id="boMsg" aria-live="polite"></p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <p class="say">The reader may be sending the right bits, but the controller may be reading them in the wrong direction.</p>
+          <div class="panel">
+            <h3>A custom format in Secure Entry can set</h3>
+            <ul class="list small" style="color:var(--ink)">
+              <li>Bit length from 1 to 256</li>
+              <li>Invert bit order</li>
+              <li>Invert byte order, when the length divides by 8</li>
+              <li>Card number and facility code fields and their ranges</li>
+              <li>Decimal or hexadecimal output</li>
+              <li>Big-endian or little-endian per field</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Demo 3. The card did not change, and the reader is not necessarily broken: the problem is representation. Endianness answers which end of a multi-bit or multi-byte value is treated as the significant end. No computer-science lecture needed.</aside>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" data-title="One format per bit length" data-section="Card formats">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">A Secure Entry rule</span>
+        <h2>Only one active format per bit length</h2>
+        <p class="lead">37 raw bits arrive. Nothing in them says which 37-bit format they are. Try switching on a second one.</p>
+      </div>
+      <div class="cols">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="fmtlist" id="fmtList"></div>
+          <div class="alert" id="fmtAlert" hidden role="alert"></div>
+        </div>
+        <div class="panel">
+          <span class="eyebrow" style="color:var(--ink-2)">From the reader</span>
+          <div class="bits-scroll"><div class="bits" id="fmtBits"></div></div>
+          <div class="readout" id="fmtOut"></div>
+          <p class="small" id="fmtMsg" aria-live="polite" style="color:var(--ink)"></p>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Don't generalize this to "no access-control system can support two formats of the same length". Some systems use reader-specific configuration or credential metadata to separate them. The ACS-specific rule is the teachable point. Symptom to remember: one 37-bit card population works and another doesn't.</aside>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" data-title="Troubleshoot bottom-up" data-section="Field method">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Troubleshooting</span>
+        <h2>Work up from the bottom of the stack</h2>
+      </div>
+      <div><div class="seg" role="group" aria-label="Mode" id="tsMode"><button aria-pressed="true" data-m="walk">Walk the steps</button><button aria-pressed="false" data-m="sym">Start from a symptom</button></div></div>
+      <div id="tsWalk" class="cols w-6-4">
+        <ol class="tsteps" id="tsSteps" style="margin:0;padding:0"></ol>
+        <div class="panel" id="tsPanel" aria-live="polite"></div>
+      </div>
+      <div id="tsSym" class="cols" hidden>
+        <div class="symlist" id="symList"></div>
+        <div class="panel" id="symDetail" aria-live="polite"></div>
+      </div>
+    </div>
+    <aside class="notes">Train them to troubleshoot from the bottom up rather than changing settings at random. Scenario C from the worksheet works well here: a third-party reader beeps on an EV3 card but ACS shows an unexpected number. Ask for five possible causes before touching configuration.</aside>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide" data-title="Common misconceptions" data-section="Field method">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Correct these on purpose</span>
+        <h2>Ten things people say</h2>
+        <p class="lead">Decide what's wrong with each one before you reveal the better version.</p>
+      </div>
+      <div class="myths" id="myths"></div>
+    </div>
+    <aside class="notes">Reveal one at a time. Each correction maps back to a layer: frequency (2), chip (3), application and keys (4), format (5), transport (6), interpretation (7).</aside>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide" data-title="Name the layer" data-section="Field method">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Comprehension check</span>
+        <h2>Name the layer</h2>
+      </div>
+      <div class="cols w-6-4">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <span class="score" id="qzCount"></span>
+          <div class="term" id="qzTerm"></div>
+          <div class="answers" id="qzAns"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="panel" id="qzWhy" aria-live="polite"><p class="small">Pick the layer this term belongs to.</p></div>
+          <div class="btnrow"><button class="btn" id="qzNext">Next term</button><button class="btn ghost" id="qzRestart">Start over</button></div>
+          <span class="score" id="qzScore"></span>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">Demo 1. Hold up each item or say each term and let the room answer before clicking. Two minutes is enough.</aside>
+  </section>
+
+  <!-- 21 -->
+  <section class="slide" data-title="Security is a chain" data-section="Field method">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The security message</span>
+        <h2>Security is a chain</h2>
+        <p class="lead">Select any link to weaken it.</p>
+      </div>
+      <div class="chain" id="chain"></div>
+      <div class="panel" id="chainOut" aria-live="polite"></div>
+    </div>
+    <aside class="notes">This is a better security lesson than ranking card brands. A weakness at one layer can undermine the strength of another.</aside>
+  </section>
+
+  <!-- 22 -->
+  <section class="slide" data-title="Recap" data-section="Field method">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Take this to every site</span>
+        <h2>Stop calling the whole thing “the card”</h2>
+      </div>
+      <div class="fourq">
+        <div><span class="qn">Q1 · layers 1–4</span><span class="qt">What is on the credential?</span></div>
+        <div><span class="qn">Q2 · layers 2–4</span><span class="qt">What does the reader understand?</span></div>
+        <div><span class="qn">Q3 · layers 5–6</span><span class="qt">What does the reader send?</span></div>
+        <div><span class="qn">Q4 · layers 5–7</span><span class="qt">What does the controller expect?</span></div>
+      </div>
+      <p class="lead">Start at the bottom. What RF technology? What chip or credential family? Is the reader reading a UID or authenticating to a protected application? What PACS ID comes out, in what format? How does the reader send it? How does Secure Entry interpret it? Answer those, and most credential problems stop being mysterious.</p>
+    </div>
+    <aside class="notes">Must understand before leaving: 1) credential technology ≠ card format ≠ reader protocol; 2) 125 kHz vs 13.56 MHz is one layer; 3) Wiegand is both an interface and a format family; 4) OSDP is transport, not a credential; 5) 26-bit doesn't mean Wiegand wiring; 6) bit length doesn't uniquely identify a format; 7) Secure Entry can define detailed custom formats; 8) one active format per bit length; 9) a beep ≠ a secure application read; 10) troubleshoot one layer at a time.</aside>
+  </section>
+
+  </main>
+
+  <div class="captions" id="captions" hidden>
+  <span class="k" id="capTitle">Transcript</span>
+  <div id="capText" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
+  <div class="narr" role="group" aria-label="Narration">
+    <button class="play" id="narrPlay" aria-label="Play narration"><svg viewBox="0 0 14 14" aria-hidden="true"><path id="narrIcon" d="M3 1.5v11l9-5.5z"/></svg></button>
+    <span class="lbl" id="narrLbl">Narration</span>
+    <div class="track" id="narrTrack" role="slider" aria-label="Narration position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0"><i id="narrFill"></i></div>
+    <span class="time" id="narrTime">0:00</span>
+    <button class="opt" id="ccBtn" aria-pressed="false" title="Show the narration transcript"><span class="lg">Transcript</span><span class="sm">Text</span></button>
+    <button class="opt" id="autoBtn" aria-pressed="false" title="Go to the next slide when narration ends"><span class="lg">Auto-advance</span><span class="sm">Auto</span></button>
+  </div>
+  <nav class="rail" aria-label="Slide navigation">
+    <button class="navbtn" id="prev" aria-label="Previous slide">←</button>
+    <div class="ticks" id="ticks"></div>
+    <button class="navbtn" id="next" aria-label="Next slide">→</button>
+  </nav>
+</div>
+
+<div class="overlay" id="overview" hidden>
+  <div class="in">
+    <div class="top"><h2>All slides</h2><button class="tool" id="ovClose">Close<kbd>Esc</kbd></button></div>
+    <div id="ovBody" style="display:flex;flex-direction:column;gap:22px"></div>
+  </div>
+</div>
+<div class="notes-panel" id="notesPanel" hidden aria-live="polite">
+  <div class="k"><span>Presenter notes</span><span id="notesNum"></span></div>
+  <p id="notesText"></p>
+</div>
+
+<script type="application/json" id="narration-data">[{"id": "s01", "title": "From card to door", "text": "Welcome. This course covers credentials, readers, protocols and card formats in AXIS Camera Station Pro Secure Entry, and how to troubleshoot them.\n\nAccess control reuses the same words for different things. Wiegand can mean a wire, or a data format. DESFire can mean a chip, or an application stored on that chip. So we won't try to memorize every technology. Instead, you'll build one mental model that tells you where any unfamiliar term belongs.\n\nLook at the card on screen. Printed along the bottom are twenty-six ones and zeros. By the end of this course, you'll be able to read them.\n\nEvery slide has something to try. Move on with the arrow keys or the buttons at the bottom whenever you're ready."}, {"id": "s02", "title": "What happens at the door", "text": "Start with a simple question. When someone presents a card and the door opens, what actually happened?\n\nTake a moment and list the steps you think are involved.\n\nNow press Present the card, and watch the journey. The credential is presented. The reader's radio field wakes it up. The reader either reads a public serial number, or it authenticates to a protected application using a key. It pulls out an identity, which is just a row of bits. Those bits travel to the door controller. Secure Entry decodes them, finds the cardholder, and checks the access rule. Only then does the door unlock, or stay locked.\n\nSelect any step to read about it again. Everything in this course fits somewhere on this path."}, {"id": "s03", "title": "The seven-layer model", "text": "Here's the model we'll use for the rest of the course. Seven layers, from the thing in someone's hand, down to the controller's decision.\n\nLayer one is the form factor: a card, a fob, or a phone. Layer two is the radio interface, 125 kHz or 13.56 MHz. Layer three is the chip technology, such as Prox, iCLASS, Seos or DESFire. Layer four is the application and its security: what's stored on the chip, and who holds the keys. Layer five is the data format, such as the 26-bit format. Layer six is how the reader talks to the controller: Wiegand, OSDP, SSCP or IP. And layer seven is the controller and Secure Entry, which interpret it all.\n\nSelect each layer to see examples, and the mistake people most often make about it.\n\nOne sentence to remember from this slide: credential security and reader-bus security are separate security problems. A secure card doesn't protect the wire, and a secure wire doesn't protect the card."}, {"id": "s04", "title": "Four field questions", "text": "In the field, you won't draw seven boxes. So here's the short version: four questions.\n\nWhat is on the credential? What does the reader understand? What does the reader send? And what does the controller expect?\n\nSelect each question to see which layers it covers. Notice that they overlap. The reader and the controller both care about the data format, and that overlap is where most configuration problems live.\n\nIf you remember nothing else from this course, remember these four questions."}, {"id": "s05", "title": "125 kHz vs 13.56 MHz", "text": "Let's start at layer two, the radio frequency, with the oldest and simplest family.\n\n125 kHz proximity credentials, usually just called Prox, carry a static identifier. There's generally no modern mutual authentication, and they're often chosen for compatibility rather than security. HID Prox is the best known, but Prox isn't only HID. Indala, AWID and the EM family are 125 kHz technologies too.\n\nThe message for customers is simple. The card works, and the card is secure, are two different statements.\n\nNow switch to 13.56 MHz. This is where the family tree gets richer: the MIFARE family, including DESFire, and HID's iCLASS and Seos. But 13.56 MHz only tells you the radio neighborhood. A card at that frequency could be a simple legacy design, or it could use modern cryptography. The frequency does not tell you the security model."}, {"id": "s06", "title": "HID: Prox to Seos", "text": "HID is everywhere, so it's worth placing its technologies on the map. Select each one in the timeline.\n\nHID Prox is the 125 kHz legacy. Legacy iCLASS moved the industry to high-frequency smart cards, but its original security architecture is now considered legacy. Don't present it as equivalent to Seos.\n\niCLASS SE introduced the Secure Identity Object, or SIO. Here's the interesting part. SIO is an identity application, and HID can place it on more than one kind of chip, including a MIFARE DESFire card.\n\nThat's a perfect example of the layered model. The credential chip and the identity application are not necessarily the same thing.\n\nSeos is HID's modern secure credential platform, and a strong choice when it's properly implemented."}, {"id": "s07", "title": "MIFARE DESFire", "text": "Now MIFARE DESFire. Two quick corrections first. MIFARE isn't a company. It's a product brand from NXP. And DESFire is one family of chips sold under that brand.\n\nDESFire is built on public standards. It uses the ISO 14443A radio interface, and standard cryptography, including AES. Many reader vendors support it, and many access-control vendors build their own applications on it. That's why it feels open. But it isn't open source. The best way to say it is: DESFire is a broadly supported, secure smart-card platform.\n\nSelect EV1, EV2 and EV3 on the right. They're an evolution, not three different technologies. The key idea is that the chip version and the application profile are separate. So don't say EV3 cards work with EV2 readers. Say that real compatibility depends on the reader, the application, the keys, the commands and the configuration."}, {"id": "s08", "title": "The security ladder", "text": "Does a newer chip automatically mean a more secure system? No. Select each rung of the ladder, starting from the bottom.\n\nThe weakest approach reads only the card's public serial number. Anything that can present that number gets in, whether the chip is EV1 or EV3.\n\nThe next rung reads a protected application, after the reader proves it holds the right key. Then comes strong key management, where the keys belong to the customer and aren't shared or left at defaults. And at the top, the whole chain is protected: the credential, the reader link, the key storage and the configuration.\n\nHere's the line to remember. The biggest security jump isn't from EV2 to EV3. It's from a static identity to a properly authenticated, secure credential."}, {"id": "s09", "title": "Axis credential generations", "text": "These are the Axis credentials you'll see. The previous generation was the TA4701 card and the TA4702 key fob, built on DESFire EV2 with 2K of memory. The current generation is the TA4711 card and the TA4712 key fob, on DESFire EV3 with 8K.\n\nNow try the reader switch. Some older Axis reader documentation lists native support only up to DESFire EV2. Yet Axis lists the EV3-based TA4711 as compatible with those readers. That's not a contradiction. An EV3 card can carry an application that only uses features an older reader understands.\n\nSo an EV3 card, and a card that uses EV3-only features, are not the same thing. Always check the exact reader, firmware and application, not just the chip generation."}, {"id": "s10", "title": "One chip, many applications", "text": "This slide shows why that matters. One DESFire EV3 chip can host several independent applications. Select each one.\n\nThe Axis encrypted credential uses SSCP in transparent mode in Secure Entry. 2N PICard is a secure application from 2N, built on DESFire, with AES-128 encryption and site-specific keys. It's not a competing card technology. HID can put its SIO identity on DESFire. And in the right architecture, a customer can run its own application and keep its own keys.\n\nBut using DESFire doesn't automatically make a system open. A vendor can still control the application and the keys. On the spectrum, the Seos ecosystem sits closer to vendor-controlled, and the DESFire platform closer to multi-vendor use. Open and secure are separate questions.\n\nSo in a project, ask the better questions on the right. Who owns the keys? Who can issue new cards? Can the customer change reader vendors later?"}, {"id": "s11", "title": "A beep is not enough", "text": "Here's one of the most practical lessons in the course. When a reader beeps, that proves one thing: radio contact.\n\nReader compatibility has seven levels. Detect the technology. Read the serial number. Recognize the secure application. Hold the right key. Authenticate. Extract the identity. And send it to the controller in the expected form.\n\nSelect where the reader stops, and watch the symptom change. If it stops at level three, it still beeps, but it sends the serial number instead of the real identity, and Secure Entry shows a number nobody expected.\n\nThat's why \"the customer has HID readers\" isn't enough information. You need the exact model, its configuration, which application it reads, who owns the keys, and what it outputs. A beep proves RF interaction. It does not prove secure credential interoperability."}, {"id": "s12", "title": "Wiegand: two meanings", "text": "Now the word that causes the most confusion: Wiegand.\n\nIt means two different things. Wiegand as an interface is the classic reader wiring. That's layer six, transport. Wiegand as a format is what people mean by 26-bit Wiegand, or 37-bit Wiegand. That's layer five, how the bits are organized.\n\nTry it. Choose Wiegand and press Send. Then choose OSDP and send again. The same 26-bit credential, facility code 42, card number 12345, arrives at the controller either way.\n\nSo a 26-bit card doesn't need Wiegand wiring. It can travel over OSDP just as well. Remember it this way: 26-bit describes the data. OSDP describes how the reader communicates it."}, {"id": "s13", "title": "Two security domains", "text": "Let's come back to the two security domains. On the left are two switches. One protects the credential. The other protects the link between the reader and the controller. Try all four combinations.\n\nWith neither on, you have two gaps. With only Secure Channel, the wire is protected, but the card can still be copied. With only a secure credential, the card is protected, but plain wiring exposes its data. You need both.\n\nOn the right are the four reader types in Secure Entry. OSDP is the modern choice: two-way, supervised, and with Secure Channel, encrypted. SSCP in transparent mode is the documented workflow for Axis encrypted DESFire credentials. The reader passes the conversation through, so the keys can stay on the controller side, behind the door, instead of in an outdoor reader that anyone can reach. Wiegand is legacy, but the installed base is huge, so you'll still see it. And IP readers are networked devices in their own right."}, {"id": "s14", "title": "What a card format defines", "text": "Now layer five: card formats. A card format is simply a rule for reading a row of bits. It defines the length, where the facility code and card number sit, where the parity bits go and what they cover, and the order of the bits and bytes.\n\nHere's the key point. The bits that arrive don't carry a label saying which format they are. Secure Entry has to be told.\n\nLook at the three bars. H10301 is the standard 26-bit format: a parity bit, eight bits of facility code, sixteen bits of card number, and another parity bit. H10302 and H10304 are both 37 bits long, but they're laid out differently. H10302 has no facility code at all.\n\nSo 37-bit is not a format. Bit length tells you how much data arrived. Format tells you what the bits mean."}, {"id": "s15", "title": "Decode a 26-bit card", "text": "Time to decode a real card. On screen are the twenty-six bits for facility code 42 and card number 12345.\n\nFind the parts. Bit one is the leading parity bit. Bits two through nine are the facility code. Bits ten through twenty-five are the card number. And bit twenty-six is the trailing parity bit.\n\nTry changing the facility code or the card number, and watch the bits and the parity update. Then flip a single bit, and see a parity check fail. That's how a controller catches a bad read.\n\nNow the important one. Switch to the misconfigured setting, so Secure Entry reads the card number from bits two to seventeen. Would the reader fail? No. The reader works perfectly, and the bits are identical. Secure Entry just reads good data the wrong way, and shows card 10800 instead of 12345. Keep that in mind. A wrong number doesn't mean a broken reader."}, {"id": "s16", "title": "Bit order and byte order", "text": "Here's another way good data can look wrong. Secure Entry expects the value FB4C. Reader A sends FB, then 4C. Reader B sends the same two bytes in the opposite order.\n\nSelect Reader B. The number is wrong. Now turn on Invert byte order. It matches. The card didn't change, and the reader isn't broken. Only the interpretation changed.\n\nTry Invert bit order too, and notice how reversing every bit changes the number completely.\n\nEndianness just means which end of a value counts as the most significant. You don't need the theory. You just need to recognize that a strange number might be an order problem. Secure Entry's custom card formats handle all of this, with lengths from 1 to 256 bits, field ranges, bit and byte order, and decimal or hexadecimal output."}, {"id": "s17", "title": "One format per bit length", "text": "Secure Entry has one rule about formats that's worth understanding: only one card format per bit length can be active at a time.\n\nThirty-seven bits have just arrived from the reader. Right now, H10304 is active, so Secure Entry reads facility code 1001 and card number 54321.\n\nNow try to switch on H10302. Secure Entry won't allow it. Turn off H10304 first, then turn on H10302, and look at the result. The same bits become one huge card number. And in this example, the parity checks pass both ways, so nothing warns you.\n\nThat's exactly why the rule exists. Thirty-seven raw bits can't say which format they are, so Secure Entry avoids the guesswork. In the field, the symptom looks like this: one group of 37-bit cards works, and another doesn't."}, {"id": "s18", "title": "Troubleshoot bottom-up", "text": "Now let's turn all of this into a method. When a card doesn't work, don't change settings at random. Start at the bottom of the stack, and work up.\n\nUse Walk the steps, and answer each question honestly. Does the reader react? Can it actually understand the credential? Does the controller see an event? Is the bit length right? Is the decoded number right? Is the credential enrolled? Should this person have access right now?\n\nWhen you answer no, the slide shows where to look. Fix that layer before you touch anything above it.\n\nIf you're starting from a symptom instead, switch to the second tab. Pick a symptom, and you'll see which layers to inspect first. For example, a reader that beeps while Secure Entry sees nothing points to layer six: the wiring, or the OSDP configuration."}, {"id": "s19", "title": "Common misconceptions", "text": "Here are ten things you'll hear in the field. Each one is partly true, which is what makes it misleading.\n\nRead each card, and decide what's wrong with it before you select it to see the better version.\n\nA few to watch for. 13.56 MHz doesn't mean secure. DESFire isn't open source. A DESFire reader that beeps may only have read the serial number. And a wrong card number usually isn't a bad reader. It's often a format or ordering problem.\n\nEvery correction here maps back to one of the seven layers."}, {"id": "s20", "title": "Name the layer", "text": "Let's check your understanding. You'll see a term. Pick the layer it belongs to.\n\nTake your time. If you get one wrong, read the explanation, because the explanation is the real lesson. When you're ready, press Next term.\n\nThere are nine terms. Doing well here means you can place an unfamiliar term on the map, and that's the skill this whole course is about."}, {"id": "s21", "title": "Security is a chain", "text": "Security is a chain. A secure chip, a secure application, good key management, a secure reader, a secure link to the controller, a secure controller, the right configuration, and good operating practices.\n\nSelect any link to weaken it, and read what that means.\n\nFor example, a DESFire EV3 card read only by its serial number throws away the main benefit of a secure card. A protected credential followed by plain legacy wiring still leaves an attack surface. And excellent technology with shared or default keys weakens everything.\n\nThat's a better security conversation to have with a customer than ranking card brands."}, {"id": "s22", "title": "Recap", "text": "You've reached the end. When you troubleshoot access control, resist calling the whole thing \"the card.\"\n\nStart at the bottom. What radio technology is it? What chip? Is the reader reading a serial number, or authenticating to a protected application? What identity comes out, and in what format? How does the reader send it? And how does Secure Entry interpret it?\n\nIf you can answer those questions, most credential problems stop being mysterious.\n\nAnd when you're at a customer site, come back to the four questions. What is on the credential? What does the reader understand? What does the reader send? What does the controller expect?\n\nThanks for completing the course."}]</script>
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+const press = (group, btn) => $$('button', group).forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+const seg = (el, fn) => el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b || !el.contains(b)) return; press(el, b); fn(b); });
+
+/* ---------- shared data ---------- */
+const LAYERS = [
+  { short: 'Credential', name: 'Physical credential / form factor', ex: 'Card · key fob · phone · wearable', what: 'The thing the person carries. Its shape tells you nothing about the chip or data inside it.', trap: 'People say “the card” when they mean any of these seven layers.' },
+  { short: 'RF', name: 'RF / air interface', ex: '125 kHz LF · 13.56 MHz HF and NFC-related', what: 'How the credential and the reader talk over the air.', trap: '13.56 MHz tells you the RF neighborhood. It does not tell you the security model.' },
+  { short: 'Chip', name: 'Credential / chip technology', ex: 'Prox · iCLASS · Seos · MIFARE Classic · DESFire', what: 'The credential family and the chip’s native capabilities.', trap: 'A DESFire EV3 chip does not tell you which application is on it.' },
+  { short: 'Application', name: 'Application + security', ex: 'UID/CSN · protected app · AES keys · SIO · 2N PICard · Axis encrypted credential', what: 'What is stored on the chip, how it is protected, and who holds the keys.', trap: 'A reader can detect a card without holding the keys to its protected application.' },
+  { short: 'PACS format', name: 'PACS ID / card data format', ex: 'H10301 26-bit · H10304 · Corporate 1000 · custom', what: 'How the identity is arranged into bits: facility code, card number, parity, bit order.', trap: '“26-bit Wiegand” names a data format. It does not require Wiegand wiring.' },
+  { short: 'Transport', name: 'Reader → controller transport', ex: 'Wiegand · OSDP · OSDP Secure Channel · SSCP · IP', what: 'How the reader hands the data to the controller.', trap: 'OSDP is a reader-to-controller protocol, not a card technology.' },
+  { short: 'Controller', name: 'Controller / Secure Entry', ex: 'Decode format · match credential · apply access rule', what: 'Turns bits into a cardholder and a decision: unlock or deny.', trap: 'Perfectly good data can still be decoded wrong when the format is wrong.' },
+];
+const lchip = n => `<span class="lchip" style="--c:var(--l${n})">${n} · ${LAYERS[n - 1].short}</span>`;
+const toBits = (v, n) => v.toString(2).padStart(n, '0').slice(-n).split('').map(Number);
+const val = a => a.length ? parseInt(a.join(''), 2) : 0;
+const sum = a => a.reduce((s, x) => s + x, 0);
+
+function h10301(fc, cn) {
+  const mid = toBits(fc, 8).concat(toBits(cn, 16));
+  return [sum(mid.slice(0, 12)) % 2, ...mid, 1 - sum(mid.slice(12)) % 2];
+}
+function h10304(fc, cn) {
+  const mid = toBits(fc, 16).concat(toBits(cn, 19));
+  return [sum(mid.slice(0, 18)) % 2, ...mid, 1 - sum(mid.slice(17)) % 2];
+}
+
+/* ---------- cover ---------- */
+(() => {
+  const b = h10301(42, 12345);
+  $('#coverBits').innerHTML = b.map((x, i) => `<span class="${i === 0 || i === 25 ? 'p' : i <= 8 ? 'f' : 'c'}">${x}</span>`).join('');
+})();
+
+/* ---------- journey ---------- */
+(() => {
+  const N = [
+    ['Credential', 'The card, fob, phone or wearable is presented.', 1],
+    ['RF field', 'The reader’s field powers or wakes the credential at 125 kHz or 13.56 MHz.', 2],
+    ['Reader', 'It reads a public UID, or authenticates to a protected application using the right key.', '3–4'],
+    ['Credential data', 'The reader extracts the PACS ID: a row of bits arranged in some format.', 5],
+    ['Reader bus', 'The bits travel to the controller over Wiegand, OSDP, SSCP or IP.', 6],
+    ['Controller', 'The door controller receives a reader event.', 7],
+    ['Secure Entry', 'It decodes the format, matches the credential, and applies the access rule.', 7],
+    ['Unlock / deny', 'The decision. Every layer before this had to be right.', 7],
+  ];
+  const wrap = $('#journey'), det = $('#journeyDetail');
+  wrap.innerHTML = N.map((n, i) => `<button class="node" data-i="${i}"><span class="dot">${i + 1}</span><span class="lbl">${n[0]}</span></button>`).join('');
+  const nodes = $$('.node', wrap);
+  let timer = null;
+  const show = (i, lightTo = i) => {
+    nodes.forEach((n, j) => { n.classList.toggle('lit', j <= lightTo); n.classList.toggle('cur', j === i); });
+    if (i < 0) { det.innerHTML = '<span class="k">Think it through first</span><p class="lead">List the steps you would expect. Then present the card, or select any step.</p>'; return; }
+    det.innerHTML = `<span class="k">Step ${i + 1} · layer ${N[i][2]}</span><p class="lead" style="color:var(--ink)">${N[i][1]}</p>`;
+  };
+  const stop = () => { clearInterval(timer); timer = null; };
+  wrap.addEventListener('click', e => { const b = e.target.closest('.node'); if (!b) return; stop(); const i = +b.dataset.i; show(i, i); });
+  $('#journeyPlay').onclick = () => {
+    stop();
+    if (reduce) { show(7, 7); return; }
+    let i = 0; show(0, 0);
+    timer = setInterval(() => { i++; if (i >= N.length) return stop(); show(i, i); }, 650);
+  };
+  $('#journeyReset').onclick = () => { stop(); show(-1, -1); };
+  show(-1, -1);
+})();
+
+/* ---------- layer stack ---------- */
+(() => {
+  const st = $('#stack'), det = $('#layerDetail');
+  st.innerHTML = LAYERS.map((l, i) => `<button class="layer" style="--c:var(--l${i + 1})" data-i="${i}" aria-pressed="false"><span class="n">${i + 1}</span><span class="nm">${l.name}<span class="ex">${l.ex}</span></span></button>`).join('') + '<div class="outcome">↓ UNLOCK / DENY</div>';
+  const pick = i => {
+    $$('.layer', st).forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.i === i)));
+    const l = LAYERS[i];
+    det.style.setProperty('--c', `var(--l${i + 1})`);
+    det.innerHTML = `<span class="num">LAYER ${i + 1} OF 7</span><h3>${l.name}</h3><p>${l.what}</p><div class="tags">${l.ex.split(' · ').map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="trap"><span class="k">Commonly confused</span>${l.trap}</div>`;
+  };
+  st.addEventListener('click', e => { const b = e.target.closest('.layer'); if (b) pick(+b.dataset.i); });
+  pick(0);
+})();
+
+/* ---------- four questions ---------- */
+(() => {
+  const Q = [
+    ['What is on the credential?', [1, 2, 3, 4]],
+    ['What does the reader understand?', [2, 3, 4]],
+    ['What does the reader send?', [5, 6]],
+    ['What does the controller expect?', [5, 6, 7]],
+  ];
+  const g = $('#qgrid');
+  g.innerHTML = Q.map((q, i) => `<button class="qcard" data-i="${i}" aria-pressed="${i === 0}"><span class="qn">QUESTION ${i + 1}</span><span class="qt">${q[0]}</span><span class="lstrip">${LAYERS.map((l, j) => `<span style="--c:var(--l${j + 1})" class="${q[1].includes(j + 1) ? 'on' : ''}" title="${l.name}">${j + 1}</span>`).join('')}</span><span class="small">${q[1].map(n => LAYERS[n - 1].short).join(' · ')}</span></button>`).join('');
+  seg(g, () => {});
+  $$('.qcard', g).forEach(b => { b.addEventListener('mouseenter', () => press(g, b)); b.addEventListener('focus', () => press(g, b)); });
+})();
+
+/* ---------- frequency ---------- */
+seg($('[aria-label="Frequency"]'), b => { $('#freq-lf').hidden = b.dataset.freq !== 'lf'; $('#freq-hf').hidden = b.dataset.freq !== 'hf'; });
+
+/* ---------- HID timeline ---------- */
+(() => {
+  const T = [
+    ['125 kHz', 'HID Prox', 'Legacy proximity', 'The best-known 125 kHz Prox ecosystem. A static identifier, kept today mainly for compatibility.', [2, 3]],
+    ['13.56 MHz', 'Legacy iCLASS', 'First HF smart credential', 'Moved the industry from simple Prox into high-frequency smart credentials. The credential and application ecosystem is proprietary, though it uses standardized RF underneath. The original security architecture is legacy today.', [2, 3]],
+    ['13.56 MHz', 'iCLASS SE / SIO', 'Newer security architecture', 'HID’s Secure Identity Object (SIO) is an application and data-security concept that can ride on more than one card technology. HID can place SIO identity data on a MIFARE DESFire credential.', [4]],
+    ['13.56 MHz', 'Seos', 'Modern secure platform', 'HID’s modern secure credential platform, generally considered a strong choice when properly implemented. Tightly associated with the HID ecosystem.', [3, 4]],
+  ];
+  const tl = $('#hidTl'), det = $('#hidDetail');
+  tl.innerHTML = T.map((t, i) => `<button data-i="${i}" aria-pressed="${i === 2}"><span class="f">${t[0]}</span><span class="t">${t[1]}</span><span class="s">${t[2]}</span></button>`).join('');
+  const show = i => { det.innerHTML = `<div class="tags">${T[i][4].map(lchip).join('')}</div><p>${T[i][3]}</p>`; };
+  seg(tl, b => show(+b.dataset.i));
+  show(2);
+})();
+
+/* ---------- DESFire EV ---------- */
+(() => {
+  const EV = [
+    'EV1 established the modern DESFire foundation.',
+    'EV2 added newer security and application capabilities. With mutual authentication, AES and good key management, EV2 can already give very strong credential security.',
+    'EV3 adds further security, privacy, transaction and performance capabilities, such as Secure Dynamic Messaging, while staying backward compatible with earlier-style applications.',
+  ];
+  const t = $('#evText');
+  seg($('#evSeg'), b => { t.textContent = EV[+b.dataset.ev]; });
+  t.textContent = EV[2];
+})();
+
+/* ---------- security ladder ---------- */
+(() => {
+  const R = [
+    ['Very weak', 'Read only a public, static identifier', 'The reader takes the card serial number (UID/CSN). Anything that can present the same number gets in, whatever the chip generation.'],
+    ['Better', 'Protected application with authentication', 'The reader proves it holds the right key and reads identity from a protected application.'],
+    ['Stronger', 'Protected application + strong key management', 'Keys are customer-controlled, not shared or default, and provisioning is managed.'],
+    ['End to end', 'Protected credential + secure reader link + protected key storage + sound PACS configuration', 'Both security domains are covered, and the controller decodes the data correctly.'],
+  ];
+  const L = $('#ladder'), det = $('#ladderDetail');
+  L.innerHTML = R.map((r, i) => `<button class="rung" data-i="${i}" aria-pressed="false"><span class="lv">${r[0]}<span class="meter">${[0, 1, 2, 3].map(j => `<i class="${j <= i ? 'on' : ''}"></i>`).join('')}</span></span><span>${r[1]}</span></button>`).join('');
+  const show = i => { press(L, $$('.rung', L)[i]); det.innerHTML = `<span class="eyebrow">${R[i][0]}</span><p>${R[i][2]}</p>${i === 1 ? '<p class="small"><b style="color:var(--accent-ink)">This is the biggest single jump.</b></p>' : ''}`; };
+  L.addEventListener('click', e => { const b = e.target.closest('.rung'); if (b) show(+b.dataset.i); });
+  show(0);
+})();
+
+/* ---------- Axis reader nuance ---------- */
+(() => {
+  const T = {
+    old: 'Older A4020-E / A4120-E product documentation has historically listed native support only through DESFire EV1 and EV2. Axis still lists the EV3-based TA4711 and TA4712 as compatible with these readers, because the credential doesn’t depend on EV3-only features there.',
+    new: 'Current A4030-E / A4131-E documentation includes DESFire EV3 support. Even so, confirm against the exact product, firmware and credential application.',
+  };
+  const t = $('#axText');
+  seg($('#axReader'), b => { t.textContent = T[b.dataset.r]; });
+  t.textContent = T.old;
+})();
+
+/* ---------- apps on DESFire ---------- */
+(() => {
+  const A = [
+    ['Axis encrypted credential', 'Secure Entry workflow', 'Secure Entry documents SSCP in transparent mode as the workflow for encrypted MIFARE DESFire credentials.', 'Keys are held on the controller side, behind the door.'],
+    ['2N PICard', '2N application', 'A secure 2N credential scheme built on DESFire EV2/EV3: secure messaging, AES-128, site-specific keysets, and a software workflow to provision cards and manage keys.', 'Not a competing card technology. It is an application.'],
+    ['HID SIO on DESFire', 'HID application', 'HID can place SIO-style identity information on a MIFARE DESFire credential.', 'Same chip as the others. HID’s identity application.'],
+    ['Customer-specific', 'Your own application', 'In the right architecture, a customer can keep control of its own application and keys.', 'Openness depends on who owns the keys, the application design, provisioning tools and interoperability rights.'],
+  ];
+  const g = $('#apps'), det = $('#appDetail');
+  g.innerHTML = A.map((a, i) => `<button data-i="${i}" aria-pressed="${i === 0}">${a[0]}<small>${a[1]}</small></button>`).join('');
+  const show = i => { det.innerHTML = `<h3>${A[i][0]}</h3><p>${A[i][2]}</p><p class="small">${A[i][3]}</p>`; };
+  seg(g, b => show(+b.dataset.i));
+  show(0);
+})();
+
+/* ---------- beep ladder ---------- */
+(() => {
+  const S = [
+    ['Detect the RF technology', 'Nothing happens. Check frequency, credential technology, reader support, power and placement.', [2, 3]],
+    ['Read the public serial number (UID/CSN)', 'The reader reacts but produces nothing usable. Check reader configuration and enabled technologies.', [3]],
+    ['Recognize the secure application', 'It beeps, but sends the UID instead of the PACS ID. ACS shows a number nobody expected.', [4]],
+    ['Possess the right key', 'It sees the application but can’t open it. The protected credential fails.', [4]],
+    ['Authenticate to the application', 'Wrong keyset or key mismatch. Authentication fails even though the card is “supported”.', [4]],
+    ['Extract the PACS identity', 'Authenticated, but the wrong data object or reader profile is used.', [4, 5]],
+    ['Output it in the expected form', 'ACS sees nothing, or a bit length or format other than expected.', [5, 6]],
+  ];
+  const L = $('#beep'), det = $('#beepDetail');
+  L.innerHTML = S.map((s, i) => `<button data-i="${i}"><span class="n">${i + 1}</span><span>${s[0]}</span><span class="st"></span></button>`).join('') + `<button data-i="7"><span class="n">✓</span><span><b>All seven work</b></span><span class="st"></span></button>`;
+  const show = f => {
+    $$('button', L).forEach((b, j) => {
+      b.classList.remove('pass', 'fail', 'skip');
+      const st = $('.st', b);
+      if (j === 7) { b.classList.toggle('pass', f === 7); st.innerHTML = ''; return; }
+      if (j < f) { b.classList.add('pass'); st.innerHTML = '<span class="status ok">works</span>'; }
+      else if (j === f) { b.classList.add('fail'); st.innerHTML = '<span class="status bad">fails here</span>'; }
+      else { b.classList.add('skip'); st.innerHTML = ''; }
+    });
+    if (f === 7) det.innerHTML = `<span class="eyebrow">Result</span><p class="verdict">Secure interoperability, end to end.</p><p class="small">Only now has the reader proven more than RF interaction.</p>`;
+    else det.innerHTML = `<span class="eyebrow">Symptom when level ${f + 1} fails</span><p class="verdict">${S[f][1]}</p><div class="tags">${S[f][2].map(lchip).join('')}</div>${f >= 2 ? '<p class="small"><b>The reader still beeped.</b></p>' : ''}`;
+  };
+  L.addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(+b.dataset.i); });
+  show(2);
+})();
+
+/* ---------- Wiegand lanes ---------- */
+(() => {
+  let lane = 'w';
+  const lanes = $$('.lane', $('#lanes'));
+  const reset = () => lanes.forEach(l => { $('.packet', l).classList.remove('go'); $('.decoded', l).hidden = true; });
+  seg($('#laneSeg'), b => { lane = b.dataset.lane; reset(); lanes.forEach(l => l.classList.toggle('off', l.dataset.lane !== lane)); });
+  $('#sendBtn').onclick = () => {
+    reset();
+    const l = lanes.find(x => x.dataset.lane === lane);
+    const p = $('.packet', l);
+    void p.offsetWidth;
+    p.classList.add('go');
+    setTimeout(() => { $('.decoded', l).hidden = false; }, reduce ? 0 : 1150);
+  };
+})();
+
+/* ---------- security domains + reader types ---------- */
+(() => {
+  const sc = $('#swCred'), sb = $('#swBus');
+  const V = {
+    '00': 'Two gaps: a credential that can be copied, and reader wiring that exposes the data.',
+    '01': 'The bus is protected, but the credential can still be copied. Secure Channel does not make a static credential secure.',
+    '10': 'The credential is protected, but plain wiring exposes its data. A secure card does not compensate for an exposed reader bus.',
+    '11': 'Both domains are secured. Now key ownership and key management decide the rest.',
+  };
+  const upd = () => {
+    const c = sc.getAttribute('aria-checked') === 'true', b = sb.getAttribute('aria-checked') === 'true';
+    $('#dl1').className = 'link ' + (c ? 'good' : 'weak'); $('#dl1').textContent = c ? 'authenticated' : 'static ID';
+    $('#dl2').className = 'link ' + (b ? 'good' : 'weak'); $('#dl2').textContent = b ? 'encrypted' : 'exposed';
+    $('#verdict').textContent = V[`${+c}${+b}`];
+  };
+  [sc, sb].forEach(s => s.onclick = () => { s.setAttribute('aria-checked', String(s.getAttribute('aria-checked') !== 'true')); upd(); });
+  upd();
+  const RT = [
+    ['Modern reader-to-controller communication: two-way, supervised, addressable. With Secure Channel, it encrypts the link between supported readers and controllers.', 'Prefer it when the reader supports it.'],
+    ['The workflow Secure Entry documents for encrypted MIFARE DESFire credentials, in transparent mode. The reader passes the conversation through, so sensitive credential keys can stay on the door-controller side instead of in an exposed reader.', 'The outdoor reader is easier for an attacker to reach than the controller. Keep the secrets on the secure side of the door.'],
+    ['Useful for existing and third-party readers. Simple and widely deployed, traditionally one-way, with limited supervision. Credential data is typically exposed on the wiring.', 'Recognize it as legacy transport. It still matters because the installed base is enormous.'],
+    ['A separate architecture: the reader is itself a networked device rather than a peripheral on the controller bus.', 'Different wiring, same question: what does it send, and what does the controller expect?'],
+  ];
+  const t = $('#rtText');
+  const show = i => { t.innerHTML = `<p>${RT[i][0]}</p><p class="small">${RT[i][1]}</p>`; };
+  seg($('#rtSeg'), b => show(+b.dataset.rt));
+  show(0);
+})();
+
+/* ---------- format bars ---------- */
+(() => {
+  const F = [
+    ['H10301', 26, 'Standard 26-bit', [['P', 1, 'p'], ['FC · 8', 8, 'f'], ['Card number · 16', 16, 'c'], ['P', 1, 'p']]],
+    ['H10302', 37, '37-bit, no facility code', [['P', 1, 'p'], ['Card number · 35', 35, 'c'], ['P', 1, 'p']]],
+    ['H10304', 37, '37-bit with facility code', [['P', 1, 'p'], ['FC · 16', 16, 'f'], ['Card number · 19', 19, 'c'], ['P', 1, 'p']]],
+  ];
+  $('#fbars').innerHTML = F.map(f => `<div class="fbar"><div class="top"><b>${f[0]}</b><span class="small">${f[2]} · ${f[1]} bits</span></div><div class="row" style="width:${(f[1] / 37 * 100).toFixed(2)}%">${f[3].map(s => `<span class="seg-f ${s[2]}" style="flex:${s[1]}" title="${s[0]}">${s[1] > 3 ? s[0] : 'P'}</span>`).join('')}</div></div>`).join('');
+})();
+
+/* ---------- 26-bit decoder ---------- */
+(() => {
+  const fcIn = $('#decFc'), cnIn = $('#decCn'), bitsEl = $('#decBits'), out = $('#decOut'), msg = $('#decMsg');
+  let mode = 'ok', base = h10301(42, 12345), bits = base.slice();
+  const clamp = (el, max) => Math.max(0, Math.min(max, parseInt(el.value, 10) || 0));
+  const fieldOf = i => {
+    if (i === 0 || i === 25) return 'p';
+    if (mode === 'ok') return i <= 8 ? 'f' : 'c';
+    return i <= 16 ? 'c' : 'f';
+  };
+  const render = () => {
+    bitsEl.innerHTML = bits.map((b, i) => `<div class="bit ${fieldOf(i)}"><button data-i="${i}" class="${b !== base[i] ? 'edited' : ''}" aria-label="Bit ${i + 1}: ${b}. Select to flip.">${b}</button><span class="ix">${i + 1}</span></div>`).join('');
+    const fc = mode === 'ok' ? val(bits.slice(1, 9)) : val(bits.slice(17, 25));
+    const cn = mode === 'ok' ? val(bits.slice(9, 25)) : val(bits.slice(1, 17));
+    const ev = sum(bits.slice(0, 13)) % 2 === 0, od = sum(bits.slice(13)) % 2 === 1;
+    out.innerHTML = `<div class="cell"><span class="k">Length</span><span class="v">26</span></div><div class="cell"><span class="k">Facility code</span><span class="v">${fc}</span></div><div class="cell"><span class="k">Card number</span><span class="v">${cn}</span></div><div class="cell"><span class="k">Bit 1 · even parity</span><span class="status ${ev ? 'ok' : 'bad'}">${ev ? 'pass' : 'fail'}</span></div><div class="cell"><span class="k">Bit 26 · odd parity</span><span class="status ${od ? 'ok' : 'bad'}">${od ? 'pass' : 'fail'}</span></div>`;
+    const edited = bits.some((b, i) => b !== base[i]);
+    const want = { fc: clamp(fcIn, 255), cn: clamp(cnIn, 65535) };
+    if (edited && !(ev && od)) msg.innerHTML = `<b style="color:var(--bad)">Parity fails.</b> A single flipped bit breaks a parity check, so a well-configured controller rejects the read.`;
+    else if (edited) msg.innerHTML = `Parity still passes after this edit. Parity catches single-bit errors, not every change.`;
+    else if (mode === 'bad') msg.innerHTML = `<b>Same card, same reader, same bits.</b> Secure Entry would show card <span class="mono">${cn}</span> instead of <span class="mono">${want.cn}</span>. The data is fine; the interpretation is wrong.`;
+    else msg.innerHTML = `Decoded cleanly: facility code <span class="mono">${fc}</span>, card number <span class="mono">${cn}</span>.`;
+  };
+  const encode = () => { base = h10301(clamp(fcIn, 255), clamp(cnIn, 65535)); bits = base.slice(); render(); };
+  fcIn.addEventListener('input', encode); cnIn.addEventListener('input', encode);
+  fcIn.addEventListener('change', () => { fcIn.value = clamp(fcIn, 255); }); cnIn.addEventListener('change', () => { cnIn.value = clamp(cnIn, 65535); });
+  bitsEl.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i; bits[i] ^= 1; render(); $(`button[data-i="${i}"]`, bitsEl).focus(); });
+  seg($('#decMode'), b => { mode = b.dataset.m; render(); });
+  $('#decReset').onclick = () => { bits = base.slice(); render(); };
+  render();
+})();
+
+/* ---------- byte / bit order ---------- */
+(() => {
+  let reader = 'a';
+  const raw = { a: [0xFB, 0x4C], b: [0x4C, 0xFB] };
+  const sbyte = $('#boByte'), sbit = $('#boBit');
+  const hx = n => n.toString(16).toUpperCase().padStart(2, '0');
+  const on = s => s.getAttribute('aria-checked') === 'true';
+  const upd = () => {
+    const r = raw[reader];
+    $('#boRaw').innerHTML = r.map((b, i) => `<div class="byte"><span class="hx" style="--bc:${b === 0xFB ? 'var(--fc)' : 'var(--cn)'}">${hx(b)}</span><span class="bn">${toBits(b, 8).join('')}</span></div>`).join('');
+    let bytes = r.slice(); if (on(sbyte)) bytes.reverse();
+    let bits = bytes.flatMap(b => toBits(b, 8)); if (on(sbit)) bits.reverse();
+    const v = val(bits), ok = v === 0xFB4C;
+    $('#boOut').innerHTML = `<div class="cell"><span class="k">Secure Entry reads</span><span class="v">0x${v.toString(16).toUpperCase().padStart(4, '0')}</span></div><div class="cell"><span class="k">Decimal</span><span class="v">${v}</span></div><div class="cell"><span class="k">Expected 0xFB4C</span><span class="status ${ok ? 'ok' : 'bad'}">${ok ? 'match' : 'no match'}</span></div>`;
+    $('#boMsg').innerHTML = ok ? 'The card didn’t change and the reader isn’t broken. Only the interpretation changed.' : (on(sbit) ? 'Reversing every bit changes the number completely.' : 'Same bytes, read in the other order. Try inverting the byte order.');
+  };
+  seg($('#boReader'), b => { reader = b.dataset.r; upd(); });
+  [sbyte, sbit].forEach(s => s.onclick = () => { s.setAttribute('aria-checked', String(!on(s))); upd(); });
+  upd();
+})();
+
+/* ---------- one active format per length ---------- */
+(() => {
+  const raw = h10304(1001, 54321);
+  const F = [
+    { id: 'H10301', len: 26, desc: '26-bit · FC 8 · CN 16', on: true },
+    { id: 'H10302', len: 37, desc: '37-bit · CN 35', on: false },
+    { id: 'H10304', len: 37, desc: '37-bit · FC 16 · CN 19', on: true },
+  ];
+  const list = $('#fmtList'), alertEl = $('#fmtAlert');
+  const render = () => {
+    list.innerHTML = F.map((f, i) => `<div class="fmtrow" data-i="${i}"><span class="nm">${f.id}<small>${f.desc}</small></span><button class="switch" role="switch" aria-checked="${f.on}" data-i="${i}" aria-label="Activate ${f.id}"><span class="track"></span><span class="small">${f.on ? 'Active' : 'Off'}</span></button></div>`).join('');
+    const act = F.find(f => f.len === 37 && f.on);
+    const kind = i => (i === 0 || i === 36) ? 'p' : !act ? 'c' : act.id === 'H10304' ? (i <= 16 ? 'f' : 'c') : 'c';
+    $('#fmtBits').innerHTML = raw.map((b, i) => `<div class="bit ${act ? kind(i) : ''}" style="${act ? '' : '--fcol:var(--line)'}"><button tabindex="-1" disabled style="cursor:default">${b}</button><span class="ix">${i + 1}</span></div>`).join('');
+    const out = $('#fmtOut'), msg = $('#fmtMsg');
+    if (!act) { out.innerHTML = `<div class="cell"><span class="k">Result</span><span class="status bad">no 37-bit format active</span></div>`; msg.textContent = 'The bits arrive, but nothing tells Secure Entry how to read them.'; return; }
+    const mid = raw.slice(1, 36);
+    if (act.id === 'H10304') { out.innerHTML = `<div class="cell"><span class="k">Facility code</span><span class="v">${val(mid.slice(0, 16))}</span></div><div class="cell"><span class="k">Card number</span><span class="v">${val(mid.slice(16))}</span></div>`; msg.textContent = 'Read as H10304, this card is facility code 1001, card number 54321.'; }
+    else { out.innerHTML = `<div class="cell"><span class="k">Facility code</span><span class="v">—</span></div><div class="cell"><span class="k">Card number</span><span class="v">${val(mid)}</span></div>`; msg.textContent = 'The same 37 bits read as H10302 become one large card number. Parity passes either way in this example, so nothing flags the mismatch.'; }
+  };
+  list.addEventListener('click', e => {
+    const s = e.target.closest('.switch'); if (!s) return;
+    const f = F[+s.dataset.i];
+    if (!f.on) {
+      const clash = F.find(o => o !== f && o.on && o.len === f.len);
+      if (clash) {
+        alertEl.hidden = false;
+        alertEl.innerHTML = `<b>Not allowed.</b> ${clash.id} is already active for ${f.len}-bit cards. Secure Entry allows only one active card format per bit length. Turn off ${clash.id} first.`;
+        const row = $(`.fmtrow[data-i="${s.dataset.i}"]`, list); row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+        return;
+      }
+    }
+    f.on = !f.on; alertEl.hidden = true; render();
+    $(`.switch[data-i="${s.dataset.i}"]`, list).focus();
+  });
+  render();
+})();
+
+/* ---------- troubleshooter ---------- */
+(() => {
+  const S = [
+    ['Does the reader react to the credential?', 'Frequency, credential technology, reader support, power, hardware, physical placement', [2, 3]],
+    ['Can the reader actually understand the credential?', 'UID only? Correct secure application? Correct key? Correct reader configuration?', [3, 4]],
+    ['Does the controller receive a reader event?', 'Wiegand / OSDP / SSCP wiring, addressing, OSDP state, protocol mismatch, port configuration', [6]],
+    ['Is the bit length what you expect?', 'Reader output, reader profile, credential application', [4, 5]],
+    ['Is the decoded number correct?', 'Card format, field ranges, parity assumptions, bit order, byte order, endianness', [5, 7]],
+    ['Is the credential enrolled?', 'Enrollment and cardholder configuration', [7]],
+    ['Should this person have access right now?', 'Access rule, schedule, door, group, credential validity', [7]],
+  ];
+  const ol = $('#tsSteps'), panel = $('#tsPanel');
+  let cur = 0, failed = -1;
+  const render = () => {
+    ol.innerHTML = S.map((s, i) => `<li class="${i === failed ? 'fail' : i < cur ? 'done' : i === cur && failed < 0 ? 'cur' : ''}"><span class="n">${i < cur ? '✓' : i + 1}</span><span>${s[0]}</span></li>`).join('');
+    if (failed >= 0) {
+      const s = S[failed];
+      panel.innerHTML = `<span class="eyebrow" style="color:var(--bad)">Stopped at step ${failed + 1}</span><p class="tq">Look here</p><p>${s[1]}</p><div class="tags">${s[2].map(lchip).join('')}</div><p class="small">Fix this layer before touching anything above it.</p><div class="btnrow"><button class="btn ghost" data-a="restart">Start over</button></div>`;
+    } else if (cur >= S.length) {
+      panel.innerHTML = `<span class="eyebrow" style="color:var(--ok)">All seven checks pass</span><p class="tq">The system is behaving as configured.</p><p class="small">If the result still surprises the customer, revisit what they expect against what is configured.</p><div class="btnrow"><button class="btn ghost" data-a="restart">Start over</button></div>`;
+    } else {
+      panel.innerHTML = `<span class="eyebrow">Step ${cur + 1} of 7</span><p class="tq">${S[cur][0]}</p><div class="btnrow"><button class="btn" data-a="yes">Yes</button><button class="btn ghost" data-a="no">No</button></div>`;
+    }
+  };
+  panel.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.a === 'yes') cur++;
+    else if (b.dataset.a === 'no') failed = cur;
+    else { cur = 0; failed = -1; }
+    render();
+    const nb = $('button', panel); if (nb) nb.focus();
+  });
+  render();
+
+  const SY = [
+    ['Reader does nothing', 'RF frequency, credential technology, reader power and support', [2, 3]],
+    ['Reader beeps but ACS sees nothing', 'Reader-controller transport, wiring, OSDP address and configuration', [6]],
+    ['ACS sees a card but the number is wrong', 'Card format, bit range, byte order, bit order, UID versus protected application', [4, 5, 7]],
+    ['Same card, different number on different readers', 'Reader profile, output configuration, UID or application choice, byte and bit handling', [4, 5, 6]],
+    ['Card works at one reader but not another', 'Reader technology support, keys and application, firmware and configuration', [3, 4]],
+    ['Number is correct but access is denied', 'Cardholder enrollment, access rule, schedule, credential validity', [7]],
+    ['EV3 credential fails on an older reader', 'Check the exact reader and application compatibility. Don’t assume from chip generation alone.', [3, 4]],
+    ['Reader recognizes DESFire but the protected credential fails', 'The reader may support the RF and UID but not the protected application or key', [4]],
+    ['OSDP reader works but shows a security warning', 'Secure Channel state, keying and configuration', [6]],
+    ['One 37-bit population works, another doesn’t', 'A same-length format conflict, or the wrong 37-bit definition is active', [5, 7]],
+  ];
+  const sl = $('#symList'), sd = $('#symDetail');
+  sl.innerHTML = SY.map((s, i) => `<button data-i="${i}" aria-pressed="${i === 2}">${s[0]}</button>`).join('');
+  const show = i => { sd.innerHTML = `<span class="eyebrow">Inspect</span><p class="tq">${SY[i][1]}</p><div class="tags">${SY[i][2].map(lchip).join('')}</div>`; };
+  seg(sl, b => show(+b.dataset.i));
+  show(2);
+  seg($('#tsMode'), b => { $('#tsWalk').hidden = b.dataset.m !== 'walk'; $('#tsSym').hidden = b.dataset.m !== 'sym'; });
+})();
+
+/* ---------- myths ---------- */
+(() => {
+  const M = [
+    ['Prox means HID.', 'HID Prox is the best-known 125 kHz Prox ecosystem, but Prox is not exclusively HID.'],
+    ['13.56 MHz means secure.', 'Frequency does not define the security model.'],
+    ['DESFire is an open-source standard.', 'DESFire is an NXP smart-card product family built on global standards and used by many vendors. It is not open source.'],
+    ['EV3 is always more secure than EV2.', 'EV3 adds capabilities, but security depends on which features and applications are actually used.'],
+    ['An EV3 card needs an EV3-only reader.', 'Compatibility depends on the card application and the reader’s capabilities, not only the chip-generation label.'],
+    ['An iCLASS reader only reads iCLASS.', 'Many modern HID readers support several credential technologies. Check the exact model and configuration.'],
+    ['If a DESFire reader beeps, it read the secure credential.', 'It may only have detected the card or read its public serial number.'],
+    ['26-bit Wiegand means Wiegand wiring.', '26-bit is a PACS data format. It can travel over other protocols, including OSDP.'],
+    ['37-bit tells me the format.', 'It tells you the length. Different 37-bit formats have different field layouts.'],
+    ['A wrong number means a bad reader.', 'It may be a format, bit-order, byte-order or interpretation problem.'],
+  ];
+  const g = $('#myths');
+  g.innerHTML = M.map(m => `<button class="myth" aria-pressed="false"><span class="k">${'Myth'}</span><span class="t">“${m[0]}”</span><span class="b">${m[1]}</span></button>`).join('');
+  g.addEventListener('click', e => { const b = e.target.closest('.myth'); if (!b) return; const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); $('.k', b).textContent = on ? 'Better' : 'Myth'; });
+})();
+
+/* ---------- quiz ---------- */
+(() => {
+  const Q = [
+    ['125 kHz', 2, 'A frequency belongs to the RF / air interface. It says nothing about the security model.'],
+    ['DESFire EV3', 3, 'A chip family and generation. It doesn’t tell you which application is on the card.'],
+    ['H10301', 5, 'HID’s designation for the standard 26-bit PACS data format.'],
+    ['OSDP', 6, 'An open reader-to-controller protocol. It is not a card technology.'],
+    ['AES key', 4, 'Keys protect the application on the chip. Who owns them matters as much as the logo on the card.'],
+    ['Facility code', 5, 'A field inside the PACS data format.'],
+    ['AXIS A1610', 7, 'A network door controller: it decodes the format, matches the credential and applies the rule.'],
+    ['Key fob', 1, 'A form factor. The same chip can come as a card, a fob or a phone credential.'],
+    ['2N PICard', 4, 'A secure application built on MIFARE DESFire EV2/EV3, not a competing chip.'],
+  ];
+  let i = 0, score = 0, answered = false;
+  const term = $('#qzTerm'), ans = $('#qzAns'), why = $('#qzWhy');
+  const render = () => {
+    if (i >= Q.length) {
+      term.textContent = `${score} / ${Q.length}`;
+      ans.innerHTML = '';
+      $('#qzCount').textContent = 'DONE';
+      why.innerHTML = `<p class="verdict">${score === Q.length ? 'Every term in the right layer.' : 'Revisit the terms you missed with the layer model.'}</p>`;
+      $('#qzNext').hidden = true; $('#qzScore').textContent = '';
+      return;
+    }
+    answered = false;
+    $('#qzNext').hidden = false;
+    $('#qzCount').textContent = `TERM ${i + 1} OF ${Q.length}`;
+    term.textContent = Q[i][0];
+    ans.innerHTML = LAYERS.map((l, j) => `<button style="--c:var(--l${j + 1})" data-j="${j + 1}"><span class="n">${j + 1}</span>${l.short}</button>`).join('');
+    why.innerHTML = '<p class="small">Pick the layer this term belongs to.</p>';
+    $('#qzScore').textContent = `Score ${score}`;
+  };
+  ans.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || answered) return;
+    answered = true;
+    const pick = +b.dataset.j, right = Q[i][1];
+    if (pick === right) score++;
+    $$('button', ans).forEach(x => { x.disabled = true; if (+x.dataset.j === right) x.classList.add('right'); });
+    if (pick !== right) b.classList.add('wrong');
+    why.innerHTML = `<span class="status ${pick === right ? 'ok' : 'bad'}">${pick === right ? 'Correct' : 'Not quite'}</span><div class="tags">${lchip(right)}</div><p>${Q[i][2]}</p>`;
+    $('#qzScore').textContent = `Score ${score}`;
+  });
+  $('#qzNext').onclick = () => { i++; render(); };
+  $('#qzRestart').onclick = () => { i = 0; score = 0; render(); };
+  render();
+})();
+
+/* ---------- chain ---------- */
+(() => {
+  const C = [
+    ['Secure chip', 'A legacy, clonable chip technology leaves credential risk no matter what is above it.'],
+    ['Secure application', 'DESFire EV3 read only by its UID does not use the main benefit of the secure smart card.'],
+    ['Secure key management', 'Excellent technology with shared, default or poorly controlled keys weakens the whole architecture.'],
+    ['Secure reader', 'An outdoor reader is physically easy to reach. Keeping keys on the controller side, as in transparent mode, reduces exposure.'],
+    ['Secure reader-controller channel', 'A protected credential followed by exposed legacy wiring leaves another attack surface.'],
+    ['Secure controller', 'The controller holds the decisions and, in some architectures, the keys. It has to be protected too.'],
+    ['Correct PACS configuration', 'A wrong format decodes good data incorrectly: the right person is denied, or the wrong number is enrolled.'],
+    ['Good operational practices', 'Enrollment, revocation, schedules and validity have to be maintained for the technology to mean anything.'],
+  ];
+  const ch = $('#chain'), out = $('#chainOut');
+  ch.innerHTML = C.map((c, i) => `${i ? '<span class="plus" aria-hidden="true">+</span>' : ''}<button data-i="${i}" aria-pressed="false">${c[0]}</button>`).join('');
+  const upd = () => {
+    const weak = $$('button', ch).filter(b => b.getAttribute('aria-pressed') === 'true').map(b => +b.dataset.i);
+    if (!weak.length) { out.innerHTML = `<span class="status ok">all links strong</span><p class="verdict">= Strong access-control architecture</p>`; return; }
+    out.innerHTML = `<span class="status bad">weakened at ${weak.length} link${weak.length > 1 ? 's' : ''}</span>${weak.map(i => `<p><b>${C[i][0]}.</b> ${C[i][1]}</p>`).join('')}<p class="small">The strong links don’t make up for the weak one.</p>`;
+  };
+  ch.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); upd(); });
+  upd();
+})();
+
+/* ---------- deck navigation ---------- */
+const slides = $$('.slide');
+const ticks = $('#ticks');
+let idx = 0;
+const seen = new Set();
+ticks.innerHTML = slides.map((s, i) => `<button data-i="${i}" class="${i && s.dataset.section !== slides[i - 1].dataset.section ? 'sec' : ''}" aria-label="Slide ${i + 1}: ${s.dataset.title}" title="${i + 1}. ${s.dataset.title}"></button>`).join('');
+ticks.addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(+b.dataset.i); });
+
+const ov = $('#overview');
+const secs = [...new Set(slides.map(s => s.dataset.section))];
+$('#ovBody').innerHTML = secs.map(sec => `<div class="ovsec"><span class="eyebrow">${sec}</span><div class="ovgrid">${slides.map((s, i) => s.dataset.section === sec ? `<button data-i="${i}"><span class="n">${String(i + 1).padStart(2, '0')}</span>${s.dataset.title}</button>` : '').join('')}</div></div>`).join('');
+$('#ovBody').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; toggleOv(false); go(+b.dataset.i); });
+const toggleOv = on => { ov.hidden = !on; $('#ovBtn').setAttribute('aria-pressed', String(on)); if (on) { $$('#ovBody button').forEach(b => b.classList.toggle('cur', +b.dataset.i === idx)); $('#ovClose').focus(); } };
+$('#ovBtn').onclick = () => toggleOv(ov.hidden);
+$('#ovClose').onclick = () => toggleOv(false);
+
+const np = $('#notesPanel');
+const setNotes = on => { np.hidden = !on; $('#notesBtn').setAttribute('aria-pressed', String(on)); store.set('ctd-notes', on ? '1' : '0'); };
+$('#notesBtn').onclick = () => setNotes(np.hidden);
+
+function go(i) {
+  i = Math.max(0, Math.min(slides.length - 1, i));
+  const changed = i !== idx || !seen.size;
+  idx = i; seen.add(i);
+  slides.forEach((s, j) => { s.hidden = j !== i; s.classList.remove('enter'); });
+  const s = slides[i];
+  if (changed && !reduce) { void s.offsetWidth; s.classList.add('enter'); }
+  s.scrollTop = 0;
+  $('#counter').textContent = `${String(i + 1).padStart(2, '0')} / ${slides.length}`;
+  $('#secName').textContent = `${s.dataset.section} · ${s.dataset.title}`;
+  $$('button', ticks).forEach((b, j) => { b.classList.toggle('cur', j === i); b.classList.toggle('seen', seen.has(j)); });
+  $('#prev').disabled = i === 0; $('#next').disabled = i === slides.length - 1;
+  const n = $('aside.notes', s);
+  $('#notesText').textContent = n ? n.textContent : 'No notes for this slide.';
+  $('#notesNum').textContent = `Slide ${i + 1}`;
+  try { history.replaceState(null, '', `#s${i + 1}`); } catch (e) {}
+  store.set('ctd-last', String(i));
+  narrSlide(i);
+}
+$('#prev').onclick = () => go(idx - 1);
+$('#next').onclick = () => go(idx + 1);
+
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target;
+  const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (e.key === 'Escape') { toggleOv(false); return; }
+  if (typing) return;
+  if (e.key === 'k' || e.key === 'K') { e.preventDefault(); audio.paused ? playNarr() : pauseNarr(); return; }
+  const onButton = t && t.tagName === 'BUTTON';
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && !onButton)) { e.preventDefault(); go(idx + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(idx - 1); }
+  else if (e.key === 'Home') go(0);
+  else if (e.key === 'End') go(slides.length - 1);
+  else if (e.key === 'o' || e.key === 'O') toggleOv(ov.hidden);
+  else if (e.key === 'n' || e.key === 'N') setNotes(np.hidden);
+});
+
+let tx = 0, ty = 0;
+const stage = $('#stage');
+stage.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+stage.addEventListener('touchend', e => {
+  if (e.target.closest('.bits-scroll, .tree, input')) return;
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 70 && Math.abs(dy) < 45) go(idx + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
+/* ---------- narration ---------- */
+let NARR = [];
+try { NARR = JSON.parse($('#narration-data').textContent); } catch (e) {}
+const audio = new Audio();
+audio.preload = 'metadata';
+let narrOn = false, narrBroken = false, advanceTimer = null;
+const playBtn = $('#narrPlay'), icon = $('#narrIcon'), fill = $('#narrFill'), timeEl = $('#narrTime'), track = $('#narrTrack');
+const capBox = $('#captions'), ccBtn = $('#ccBtn'), autoBtn = $('#autoBtn');
+const PLAY = 'M3 1.5v11l9-5.5z', PAUSE = 'M3 1.5h3v11H3zM8 1.5h3v11H8z';
+const fmt = t => isFinite(t) ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}` : '0:00';
+const srcFor = i => `../audio/s${String(i + 1).padStart(2, '0')}.mp3`;
+const setIcon = () => { const on = !audio.paused; icon.setAttribute('d', on ? PAUSE : PLAY); playBtn.setAttribute('aria-label', on ? 'Pause narration' : 'Play narration'); };
+const load = i => { const src = srcFor(i); if (!audio.src.endsWith(src)) audio.src = src; };
+function playNarr() {
+  if (narrBroken) return;
+  clearTimeout(advanceTimer);
+  load(idx); narrOn = true;
+  const p = audio.play();
+  if (p) p.catch(() => { narrOn = false; setIcon(); });
+}
+function pauseNarr() { narrOn = false; clearTimeout(advanceTimer); audio.pause(); }
+function renderCaptions(i) {
+  const n = NARR[i];
+  $('#capTitle').textContent = n ? `Transcript · ${i + 1}. ${n.title}` : 'Transcript';
+  $('#capText').innerHTML = n ? n.text.split(/\n\n+/).map(t => `<p>${t.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`).join('') : '<p class="small">No narration for this slide.</p>';
+}
+function narrSlide(i) {
+  $('#next').classList.remove('pulse');
+  clearTimeout(advanceTimer);
+  renderCaptions(i);
+  if (narrBroken) return;
+  audio.pause(); load(i);
+  fill.style.width = '0'; timeEl.textContent = '0:00';
+  if (narrOn) playNarr();
+}
+audio.addEventListener('play', setIcon);
+audio.addEventListener('pause', setIcon);
+const tick = () => {
+  const d = audio.duration, c = audio.currentTime;
+  fill.style.width = d ? `${(c / d) * 100}%` : '0';
+  timeEl.textContent = d ? `${fmt(c)} / ${fmt(d)}` : fmt(c);
+  track.setAttribute('aria-valuenow', d ? String(Math.round((c / d) * 100)) : '0');
+};
+audio.addEventListener('timeupdate', tick);
+audio.addEventListener('loadedmetadata', tick);
+audio.addEventListener('ended', () => {
+  setIcon();
+  if (idx >= slides.length - 1) return;
+  if (autoBtn.getAttribute('aria-pressed') === 'true') advanceTimer = setTimeout(() => go(idx + 1), reduce ? 0 : 1200);
+  else $('#next').classList.add('pulse');
+});
+audio.addEventListener('error', () => {
+  if (!audio.getAttribute('src')) return;
+  narrBroken = true; narrOn = false; setIcon();
+  playBtn.disabled = true; playBtn.style.opacity = '.4';
+  $('#narrLbl').textContent = 'Narration unavailable';
+  $('#startNarr').hidden = true;
+});
+playBtn.onclick = () => audio.paused ? playNarr() : pauseNarr();
+const seek = f => { if (audio.duration) audio.currentTime = Math.max(0, Math.min(1, f)) * audio.duration; };
+track.addEventListener('click', e => { const r = track.getBoundingClientRect(); seek((e.clientX - r.left) / r.width); });
+track.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault(); e.stopPropagation();
+  if (audio.duration) audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + (e.key === 'ArrowRight' ? 5 : -5)));
+});
+const setCc = on => { capBox.hidden = !on; ccBtn.setAttribute('aria-pressed', String(on)); store.set('ctd-cc', on ? '1' : '0'); };
+ccBtn.onclick = () => setCc(capBox.hidden);
+autoBtn.onclick = () => { const on = autoBtn.getAttribute('aria-pressed') !== 'true'; autoBtn.setAttribute('aria-pressed', String(on)); store.set('ctd-auto', on ? '1' : '0'); };
+if (store.get('ctd-auto') === '1') autoBtn.setAttribute('aria-pressed', 'true');
+if (store.get('ctd-cc') === '1') setCc(true);
+
+const lastSeen = parseInt(store.get('ctd-last') || '0', 10);
+$('#startNarr').onclick = () => { if (idx !== 0) go(0); playNarr(); };
+if (lastSeen > 0 && lastSeen < slides.length) {
+  const rb = $('#resumeBtn');
+  rb.hidden = false;
+  rb.textContent = `Resume at slide ${lastSeen + 1}`;
+  rb.onclick = () => { narrOn = true; go(lastSeen); playNarr(); };
+}
+
+const m = /^#s(\d+)$/.exec(location.hash || '');
+go(m ? +m[1] - 1 : 0);
+if (store.get('ctd-notes') === '1') setNotes(true);
+})();
+</script>
